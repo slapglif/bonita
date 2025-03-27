@@ -1,0 +1,87 @@
+
+from typing import Dict, List, Any, Tuple, Optional
+import pandas as pd
+from datetime import datetime
+from pydantic import BaseModel, Field
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+from langchain_community.utilities.serpapi import SerpAPIWrapper
+from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from langgraph.graph import END
+# Custom in-memory solution since langgraph.store.memory.MemorySolutionStore is not available
+class SimpleMemoryStore:
+    """A simple in-memory key-value store for business extraction workflow."""
+    def __init__(self):
+        self._store = {}
+    
+    def get(self, key, default=None):
+        """Get a value from the store."""
+        return self._store.get(key, default)
+    
+    def set(self, key, value):
+        """Set a value in the store."""
+        self._store[key] = value
+        return value
+    
+    def delete(self, key):
+        """Delete a value from the store."""
+        if key in self._store:
+            del self._store[key]
+    
+    def list(self):
+        """List all keys in the store."""
+        return list(self._store.keys())
+
+# Simplified function to get langmem store - returns our simple memory store
+def get_langmem_store():
+    """Get a memory store instance."""
+    raise ValueError("Original langmem store not available")
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class BusinessQuery(BaseModel):
+    """A structured query format for SerpAPI searches."""
+    business_name: str = Field(..., description="The full business name")
+    location: str = Field(..., description="Business location including state and zip code")
+    query_type: str = Field(..., description="Type of query: 'owner', 'address', 'contact'")
+    search_query: str = Field(..., description="The full search query to submit to search engine")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "business_name": "Absolute Home Improvement LLC",
+                "location": "MO 64040",
+                "query_type": "owner",
+                "search_query": "who owns Absolute Home Improvement LLC in Missouri 64040 owner name"
+            }
+        }
+
+class SearchResult(BaseModel):
+    """Structure for storing search results with metadata."""
+    business_name: str
+    query_type: str
+    search_url: str
+    snippet: str
+    relevance_score: float = Field(..., ge=0.0, le=1.0)
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "business_name": "Absolute Home Improvement LLC",
+                "query_type": "owner",
+                "search_url": "https://example.com/business/info",
+                "snippet": "Absolute Home Improvement LLC is owned by John Smith who started the company in 2015.",
+                "relevance_score": 0.85
+            }
+        }
+
+class ContentChunk(BaseModel):
+    """Represents a processed cont

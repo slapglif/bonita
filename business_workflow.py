@@ -29,34 +29,17 @@ from langchain_core.embeddings import Embeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
 from langgraph.graph import END
-# Custom in-memory solution since langgraph.store.memory.MemorySolutionStore is not available
-class SimpleMemoryStore:
-    """A simple in-memory key-value store for business extraction workflow."""
-    def __init__(self):
-        self._store = {}
-    
-    def get(self, key, default=None):
-        """Get a value from the store."""
-        return self._store.get(key, default)
-    
-    def set(self, key, value):
-        """Set a value in the store."""
-        self._store[key] = value
-        return value
-    
-    def delete(self, key):
-        """Delete a value from the store."""
-        if key in self._store:
-            del self._store[key]
-    
-    def list(self):
-        """List all keys in the store."""
-        return list(self._store.keys())
+from langgraph.store.memory import InMemoryStore
 
-# Simplified function to get langmem store - returns our simple memory store
 def get_langmem_store():
-    """Get a memory store instance."""
-    raise ValueError("Original langmem store not available")
+    """Get a memory store instance from LangGraph."""
+    store = InMemoryStore(
+        index={
+            "dims": 1536,  # Dimension for text-embedding-3-small
+            "embed": "openai:text-embedding-3-small"  # Specify the embedding model
+        }
+    )
+    return store
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -550,12 +533,9 @@ class BusinessInfoExtractor:
         )
         self.embeddings = OpenAIEmbeddings()
         # Initialize memory store
-        try:
-            self.store = get_langmem_store()
-            logger.info("Initialized memory store for business extraction")
-        except Exception as e:
-            self.store = SimpleMemoryStore()
-            logger.warning(f"Failed to initialize LangMem store, using simple in-memory store: {str(e)}")
+        # Always use LangGraph's InMemoryStore
+        self.store = get_langmem_store()
+        logger.info("Initialized memory store for business extraction")
     
     async def _process_single_business(self, business_data: Dict[str, Any]) -> BusinessOwnerInfo:
         """Process a single business to extract owner information."""
