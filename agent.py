@@ -118,21 +118,37 @@ Question: {input}
         # Create prompt with all required variables in a single template
         prompt = PromptTemplate.from_template(template)
         
-        # Initialize chat memory history
-        chat_history = ChatMessageHistory()
-        logger.info("Using standard ChatMessageHistory for agent memory")
-            
-        # Create a standard LangChain memory with our chat history
-        from langchain_core.memory import ConversationBufferMemory
+        # Initialize the LangMem system for proper memory management
+        logger.info("Initializing LangMem for agent memory")
         
-        # Use standard ConversationBufferMemory instead of custom implementation
-        memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            chat_memory=chat_history,
-            return_messages=True
+        # Define default user ID for the memory namespace
+        default_user_id = "default_user"
+        
+        # Create namespace templates for different memory types
+        user_profile_ns = NamespaceTemplate(("profiles", default_user_id))
+        semantic_memory_ns = NamespaceTemplate(("memories", default_user_id))
+        
+        # Setup Memory manager for user profiles
+        profile_manager = create_memory_store_manager(
+            "gpt-4-turbo",  # First parameter is model name as positional arg
+            schemas=[UserProfile],
+            instructions="Extract and update user profile information from conversations",
+            namespace=user_profile_ns,
+            store=store,
+            enable_inserts=True,
+            enable_deletes=True
         )
-                    
-        # Memory is already defined above
+        
+        # Setup Memory manager for semantic facts
+        semantic_manager = create_memory_store_manager(
+            "gpt-4-turbo",  # First parameter is model name as positional arg
+            schemas=[SemanticTriple],
+            instructions="Extract important facts and information as semantic triples",
+            namespace=semantic_memory_ns,
+            store=store,
+            enable_inserts=True,
+            enable_deletes=True
+        )
         
         # Create the React agent with proper formatting for tool messages
         agent = create_react_agent(
@@ -141,11 +157,21 @@ Question: {input}
             prompt=prompt,
         )
         
-        # Create agent executor
+        # Create a custom memory management system for the agent
+        from langmem import create_manage_memory_tool
+        
+        # Add memory management tool for explicit memory operations
+        # The namespace parameter is required - use tuple format
+        memory_tool = create_manage_memory_tool(store=store, namespace=("memories", default_user_id))
+        
+        # Add memory tool to the agent tools list
+        agent_tools = tools + [memory_tool]
+        
+        # Create agent executor with memory management
         agent_executor = AgentExecutor(
             agent=agent,
-            tools=tools,
-            memory=memory,
+            tools=agent_tools,
+            memory=None,  # No standard memory - using LangMem instead
             verbose=True,
             handle_parsing_errors=True,
             max_iterations=5,
