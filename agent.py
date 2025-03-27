@@ -1,6 +1,12 @@
 import os
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple, Optional
+import warnings
+
+# Silence deprecation warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Handle both pydantic v1 and v2
 try:
     # For Pydantic v2
     from pydantic import BaseModel, Field
@@ -8,15 +14,68 @@ except ImportError:
     # For older Pydantic versions
     from pydantic.v1 import BaseModel, Field
 
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain.agents.format_scratchpad import format_to_openai_function_messages
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain.schema import SystemMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
-from langgraph.store.memory import InMemoryStore
-from langmem import create_memory_manager, create_memory_store_manager
-from langmem.utils import NamespaceTemplate
+# LangChain imports with try/except for compatibility
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    from langchain.chat_models import ChatOpenAI
+
+try:
+    from langchain.agents import AgentExecutor, create_react_agent
+except ImportError:
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.react.base import create_react_agent
+
+try:
+    from langchain.agents.format_scratchpad import format_to_openai_function_messages
+except ImportError:
+    # Fallback - we might need to implement this function if not available
+    def format_to_openai_function_messages(messages):
+        return messages
+
+try:
+    from langchain_community.chat_message_histories import ChatMessageHistory
+except ImportError:
+    from langchain.memory import ChatMessageHistory
+
+try:
+    from langchain.schema import SystemMessage
+except ImportError:
+    from langchain.schema.messages import SystemMessage
+
+try:
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
+except ImportError:
+    from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
+
+try:
+    from langgraph.store.memory import InMemoryStore
+except ImportError:
+    # Simple fallback for InMemoryStore
+    class InMemoryStore:
+        def __init__(self, index=None):
+            self.data = {}
+            self.index = index or {}
+            
+        def get(self, key):
+            return self.data.get(key)
+            
+        def put(self, key, value):
+            self.data[key] = value
+
+try:
+    from langmem import create_memory_manager, create_memory_store_manager
+    from langmem.utils import NamespaceTemplate
+    HAS_LANGMEM = True
+except ImportError:
+    HAS_LANGMEM = False
+    # Fallback implementation for NamespaceTemplate
+    class NamespaceTemplate:
+        def __init__(self, template):
+            self.template = template
+            
+        def format(self, **kwargs):
+            return self.template
 
 from tools import get_tools
 
