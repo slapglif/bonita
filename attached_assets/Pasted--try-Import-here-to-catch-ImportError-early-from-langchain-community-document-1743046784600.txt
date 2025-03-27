@@ -1,0 +1,139 @@
+
+    try:
+        # Import here to catch ImportError early
+        from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
+    except ImportError:
+        logger.error("Playwright not found. Cannot fetch content.")
+        # Return empty content for all URLs
+        return {url: f"Failed to load content for {url}" for url in urls}
+    
+    try:
+        # Use async Playwright directly for maximum parallelism
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            
+            # Function to process a single URL
+            async def process_url(url):
+                try:
+                    # Create a new context for each URL for better isolation
+                    context = await browser.new_context()
+                    page = await context.new_page()
+                    logger.info(f"Navigating to {url}")
+                    response = await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                    
+                    if response and response.ok:
+                        # Extract all text from the page
+                        content = await page.evaluate("""() => {
+                            // Remove unwanted elements
+                            const elementsToRemove = document.querySelectorAll('nav, header, footer, .ads, #ads, .navigation, .menu');
+                            for (let el of elementsToRemove) {
+                                if (el && el.parentNode) el.parentNode.removeChild(el);
+                            }
+                            
+                            // Get the cleaned content
+                            return document.body.innerText;
+                        }""")
+                        
+                        content_map[url] = content
+                    else:
+                        status = response.status if response else "Unknown"
+                        logger.warning(f"Failed to load {url} - Status: {status}")
+                        content_map[url] = f"Failed to load content for {url} (Status: {status})"
+                        
+                    await page.close()
+                    await context.close()
+                except Exception as page_error:
+                    logger.error(f"Error fetching page {url}: {str(page_error)}")
+                    content_map[url] = f"Error loading content: {str(page_error)}"
+            
+            # Create tasks for all URLs and process them in parallel
+            tasks = [process_url(url) for url in urls]
+            await asyncio.gather(*tasks)
+            
+            await browser.close()
+            
+    except Exception as e:
+        logger.error(f"Error fetching content: {str(e)}")
+        # Add error message content for all URLs
+        for url in urls:
+            if url not in content_map:
+                content_map[url] = f"Failed to load content: {str(e)}"
+    
+    # Ensure all URLs have an entry
+    for url in urls:
+        if url not in content_map:
+            content_map[url] = "No content retrieved"
+    
+    logger.info(f"Fetched content from {len(content_map)} URLs")
+    
+    return content_map
+
+async def preprocess_content(
+    content_map: Dict[str, str],
+    business_name: str
+) -> List[ContentChunk]:
+    """Split and preprocess content into chunks for embedding."""
+    chunks = []
+    
+    for url, content in content_map.items():
+        if not content:
+            continue
+        
+        # Simple chunking by paragraphs
+        paragraphs = [p for p in content.split('\n\n') if p.strip()]
+        
+        for i, paragraph in enumerate(paragraphs):
+            # Only keep chunks with some minimum content
+            if len(paragraph.strip()) < 50:
+                continue
+                
+            chunk = ContentChunk(
+                business_name=business_name,
+                source_url=url,
+                content=paragraph.strip(),
+                chunk_index=i
+            )
+            chunks.append(chunk)
+    
+    return chunks
+
+async def score_and_rank_chunks(
+    chunks: List[ContentChunk],
+    query: str,
+    embeddings: Embeddings
+) -> List[Tuple[ContentChunk, float]]:
+    """Score and rank content chunks based on relevance to query."""
+    if not chunks:
+        return []
+    
+    try:
+        # Create documents from chunks
+        docs = [Document(page_content=chunk.content, metadata={"index": i}) 
+                for i, chunk in enumerate(chunks)]
+        
+        # Get query embedding
+        query_embedding = embeddings.embed_query(query)
+        
+        # Get document embeddings
+        doc_embeddings = embeddings.embed_documents([doc.page_content for doc in docs])
+        
+        # Calculate similarity scores
+        scored_chunks = []
+        for i, doc_embedding in enumerate(doc_embeddings):
+            # Calculate cosine similarity
+            similarity = sum(a*b for a, b in zip(query_embedding, doc_embedding)) / (
+                sum(a*a for a in query_embedding)**0.5 * sum(b*b for b in doc_embedding)**0.5
+            )
+            
+            chunk = chunks[i]
+            scored_chunks.append((chunk, similarity))
+        
+        # Sort by score in descending order
+        scored_chunks.sort(key=lambda x: x[1], reverse=True)
+        
+        return scored_chunks
+    
+    except Exception as e:
+        logger.error(f"Error scoring chunks: {str(e)}")
+        # Return unsorted chunks with neutral scores as fallback
+        return [(chunk, 0.5) for chunk in chunks]
