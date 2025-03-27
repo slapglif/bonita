@@ -59,3 +59,23 @@
     border-radius: 0.25rem;
     overflow-x: auto;
 }
+
+/* Business Extraction Styles */
+.results-container {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.progress {
+    height: 10px;
+}
+
+.table {
+    font-size: 0.875rem;
+}
+
+.table th,
+.table td {
+    padding: 0.5rem;
+}

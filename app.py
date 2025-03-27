@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
+# Register business routes if available
+if BUSINESS_ROUTES_AVAILABLE:
+    app.register_blueprint(business_bp)
+    logger.info("Business routes registered successfully")
+
 # Initialize agent and reflection executor for background memory processing
 agent = None
 reflection_executor = None
