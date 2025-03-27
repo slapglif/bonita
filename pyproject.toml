@@ -26,6 +26,8 @@ dependencies = [
     "pydantic>=2.10.6",
     "serpapi>=0.1.5",
     "tenacity>=9.0.0",
+    "rich>=13.9.4",
+    "loguru>=0.7.3",
 ]
 
 [[tool.uv.index]]

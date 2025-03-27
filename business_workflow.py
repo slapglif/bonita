@@ -6,7 +6,6 @@ using multi-query generation, content crawling, RAG and reflection for maximum a
 The workflow uses LangMem to store and retrieve semantic information between steps.
 """
 import os
-import logging
 import asyncio
 import time
 from typing import Dict, List, Any, Tuple, Optional
@@ -20,6 +19,14 @@ except ImportError:
     from pydantic.v1 import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+# Rich and Loguru for enhanced logging and observability
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich.table import Table
+from rich.traceback import install as install_rich_traceback
+from loguru import logger
+
 from langchain_community.utilities.serpapi import SerpAPIWrapper
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain_core.prompts import ChatPromptTemplate
@@ -31,6 +38,19 @@ from langchain_openai import OpenAIEmbeddings
 from langgraph.graph import END
 from langgraph.store.memory import InMemoryStore
 
+# Configure Rich and Loguru for enhanced observability
+console = Console(record=True)
+install_rich_traceback(show_locals=True)
+
+# Setup custom progress display
+progress = Progress(
+    SpinnerColumn(),
+    TextColumn("[bold blue]{task.description}"),
+    BarColumn(),
+    TextColumn("[bold green]{task.completed} of {task.total}"),
+    TimeElapsedColumn()
+)
+
 def get_langmem_store():
     """Get a memory store instance from LangGraph."""
     store = InMemoryStore(
@@ -41,9 +61,16 @@ def get_langmem_store():
     )
     return store
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Remove standard logging and configure Loguru
+import logging
+logging.getLogger().handlers = []
+logger.remove()  # Remove default handler
+logger.add(
+    lambda msg: console.print(f"[bold blue]{msg}[/bold blue]"), 
+    level="INFO",
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"
+)
+logger.add("workflow.log", rotation="10 MB", retention="1 day", level="DEBUG")
 
 class BusinessQuery(BaseModel):
     """A structured query format for SerpAPI searches."""
@@ -221,68 +248,114 @@ async def generate_search_queries(
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
 async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
     """Perform search using SerpAPI with retries and error handling."""
-    try:
-        # Initialize SerpAPI wrapper
-        serpapi_key = os.environ.get("SERPAPI_API_KEY")
-        if not serpapi_key:
-            logger.error("SERPAPI_API_KEY not set")
-            return []
+    with console.status(f"[bold green]Searching for {query.business_name} ({query.query_type})...", spinner="dots"):
+        try:
+            # Log the search operation with detailed information
+            logger.info(f"Search operation started for: {query.business_name}")
+            console.print(Panel(f"[bold]Search Query:[/bold] {query.search_query}", 
+                              title=f"[blue]{query.business_name} - {query.query_type}[/blue]", 
+                              expand=False))
+            
+            # Initialize SerpAPI wrapper
+            serpapi_key = os.environ.get("SERPAPI_API_KEY")
+            if not serpapi_key:
+                error_msg = "SERPAPI_API_KEY not set in environment variables"
+                logger.error(error_msg)
+                console.print(f"[bold red]Error:[/bold red] {error_msg}")
+                return []
+            
+            logger.debug(f"Using SerpAPI key: {serpapi_key[:4]}...")
+            console.print("[green]✓[/green] SerpAPI key found")
+            
+            # Create and configure SerpAPI wrapper
+            search = SerpAPIWrapper(serpapi_api_key=serpapi_key)
+            logger.debug("SerpAPI wrapper initialized")
+            
+            # Perform search with detailed timing
+            start_time = time.time()
+            console.print(f"[yellow]Executing search query: '{query.search_query}'[/yellow]")
+            search_result = search.results(query.search_query)
+            elapsed = time.time() - start_time
+            logger.info(f"Search completed in {elapsed:.2f} seconds")
+            
+            # Process organic results
+            results = []
+            if "organic_results" in search_result:
+                result_count = len(search_result["organic_results"][:5])
+                logger.info(f"Found {result_count} organic results for {query.business_name}")
+                console.print(f"[green]✓[/green] Retrieved {result_count} results for {query.business_name}")
+                
+                # Create a table to display search results
+                result_table = Table(title=f"Search Results for {query.business_name}", show_header=True)
+                result_table.add_column("Title", style="cyan", no_wrap=False)
+                result_table.add_column("Snippet", style="green", no_wrap=False)
+                result_table.add_column("Score", style="magenta", justify="right")
+                
+                for i, result in enumerate(search_result["organic_results"][:5]):  # Limit to top 5 results
+                    title = result.get("title", "")
+                    snippet = result.get("snippet", "")
+                    link = result.get("link", "")
+                    
+                    # Calculate a simple relevance score based on position
+                    position_score = 1.0 - (i * 0.15)  # 1.0, 0.85, 0.7, 0.55, 0.4
+                    
+                    # Add basic keywords matching for the relevance score
+                    business_keywords = query.business_name.lower().split()
+                    query_type_keywords = {"owner": ["owner", "founder", "ceo", "president"], 
+                                        "address": ["address", "location", "headquarters", "office"],
+                                        "contact": ["contact", "phone", "email", "website"]}
+                    
+                    keyword_matches = 0
+                    search_text = (title + " " + snippet).lower()
+                    
+                    # Check business name keywords
+                    for keyword in business_keywords:
+                        if keyword in search_text:
+                            keyword_matches += 1
+                            logger.debug(f"Matched business keyword: {keyword}")
+                    
+                    # Check query type specific keywords
+                    for keyword in query_type_keywords.get(query.query_type, []):
+                        if keyword in search_text:
+                            keyword_matches += 2  # Give more weight to query type matches
+                            logger.debug(f"Matched query type keyword: {keyword}")
+                    
+                    # Calculate final relevance score
+                    keyword_score = min(0.5, keyword_matches * 0.1)  # Max 0.5 for keyword matches
+                    relevance_score = min(1.0, position_score + keyword_score)
+                    
+                    # Create SearchResult object
+                    search_result_obj = SearchResult(
+                        business_name=query.business_name,
+                        query_type=query.query_type,
+                        search_url=link,
+                        snippet=snippet,
+                        relevance_score=relevance_score
+                    )
+                    results.append(search_result_obj)
+                    
+                    # Add to result table
+                    truncated_title = title[:50] + "..." if len(title) > 50 else title
+                    truncated_snippet = snippet[:80] + "..." if len(snippet) > 80 else snippet
+                    result_table.add_row(truncated_title, truncated_snippet, f"{relevance_score:.2f}")
+                    
+                # Display the results table
+                console.print(result_table)
+            else:
+                logger.warning(f"No organic results found for {query.business_name}")
+                console.print(f"[yellow]No organic results found for {query.business_name}[/yellow]")
+                # Log the complete search result for debugging
+                logger.debug(f"Full search result: {search_result}")
+            
+            logger.info(f"Processed {len(results)} search results for {query.business_name}")
+            return results
         
-        search = SerpAPIWrapper(serpapi_api_key=serpapi_key)
-        
-        # Perform search
-        search_result = search.results(query.search_query)
-        
-        # Process organic results
-        results = []
-        if "organic_results" in search_result:
-            for i, result in enumerate(search_result["organic_results"][:5]):  # Limit to top 5 results
-                title = result.get("title", "")
-                snippet = result.get("snippet", "")
-                link = result.get("link", "")
-                
-                # Calculate a simple relevance score based on position
-                position_score = 1.0 - (i * 0.15)  # 1.0, 0.85, 0.7, 0.55, 0.4
-                
-                # Add basic keywords matching for the relevance score
-                business_keywords = query.business_name.lower().split()
-                query_type_keywords = {"owner": ["owner", "founder", "ceo", "president"], 
-                                    "address": ["address", "location", "headquarters", "office"],
-                                    "contact": ["contact", "phone", "email", "website"]}
-                
-                keyword_matches = 0
-                search_text = (title + " " + snippet).lower()
-                
-                # Check business name keywords
-                for keyword in business_keywords:
-                    if keyword in search_text:
-                        keyword_matches += 1
-                
-                # Check query type specific keywords
-                for keyword in query_type_keywords.get(query.query_type, []):
-                    if keyword in search_text:
-                        keyword_matches += 2  # Give more weight to query type matches
-                
-                # Calculate final relevance score
-                keyword_score = min(0.5, keyword_matches * 0.1)  # Max 0.5 for keyword matches
-                relevance_score = min(1.0, position_score + keyword_score)
-                
-                # Create SearchResult object
-                search_result = SearchResult(
-                    business_name=query.business_name,
-                    query_type=query.query_type,
-                    search_url=link,
-                    snippet=snippet,
-                    relevance_score=relevance_score
-                )
-                results.append(search_result)
-        
-        return results
-    
-    except Exception as e:
-        logger.error(f"Error during search for {query.search_query}: {str(e)}")
-        # Raise for retry
-        raise
+        except Exception as e:
+            error_details = f"Error during search for {query.search_query}: {str(e)}"
+            logger.error(error_details)
+            console.print(f"[bold red]Search Error:[/bold red] {error_details}")
+            # Raise for retry
+            raise
 
 async def fetch_content(urls: List[str]) -> Dict[str, str]:
     """Fetch and extract content from URLs using Playwright's async API with maximum parallelism."""
@@ -537,47 +610,79 @@ class BusinessInfoExtractor:
         logger.info("Initialized memory store for business extraction")
     
     async def _process_single_business(self, business_data: Dict[str, Any]) -> BusinessOwnerInfo:
-        """Process a single business to extract owner information."""
+        """Process a single business to extract owner information using fully async processing."""
         business_name = business_data.get("business_name", "")
         state = business_data.get("state", "")
         zip_code = business_data.get("zip_code", "")
         
-        logger.info(f"Processing business: {business_name} ({state} {zip_code})")
-        
-        # Initialize or retrieve processing memory
-        memory = ProcessingMemory(
-            business_name=business_name,
-            state=state,
-            zip_code=str(zip_code)  # Convert to string to ensure proper typing
-        )
-        
         try:
-            # 1. Generate search queries
+            # Setup progress tracking and logging
+            logger.info(f"Processing business: {business_name} ({state} {zip_code})")
+            
+            # Initialize or retrieve processing memory
+            memory = ProcessingMemory(
+                business_name=business_name,
+                state=state,
+                zip_code=str(zip_code)  # Convert to string to ensure proper typing
+            )
+            
+            # 1. Generate search queries using async streaming
+            logger.info(f"Step 1: Generating search queries for {business_name}")
+            query_generation_start = time.time()
             queries = await generate_search_queries(self.llm, business_data)
-            logger.info(f"Generated {len(queries)} search queries for {business_name}")
+            logger.info(f"Generated {len(queries)} search queries in {time.time() - query_generation_start:.2f}s")
             
-            # 2. Execute search queries in parallel
-            # Create tasks for all search queries and execute them simultaneously
-            search_tasks = [search_with_query(query) for query in queries]
-            search_results_groups = await asyncio.gather(*search_tasks, return_exceptions=True)
+            # 2. Execute search queries in parallel with streaming results
+            logger.info(f"Step 2: Executing search queries in parallel for {business_name}")
+            search_start = time.time()
             
-            # Process and merge search results
+            # Create an async queue for streaming search results as they complete
+            search_queue = asyncio.Queue()
+            
+            # Create tasks that will put results in the queue when done
+            async def process_query_and_enqueue(query_idx, query):
+                try:
+                    results = await search_with_query(query)
+                    await search_queue.put((True, query_idx, results))
+                except Exception as e:
+                    logger.error(f"Error in search query {query_idx}: {str(e)}")
+                    await search_queue.put((False, query_idx, e))
+            
+            # Start all search tasks
+            search_tasks = []
+            for i, query in enumerate(queries):
+                task = asyncio.create_task(process_query_and_enqueue(i, query))
+                search_tasks.append(task)
+            
+            # Track when all search tasks are done
+            search_done = asyncio.create_task(asyncio.gather(*search_tasks))
+            
+            # Process results as they become available
             all_search_results = []
-            for i, results in enumerate(search_results_groups):
-                if isinstance(results, Exception):
-                    logger.error(f"Error in search query {i}: {str(results)}")
-                    continue
+            remaining = len(queries)
+            
+            # Stream the results as they complete
+            while remaining > 0:
+                success, idx, results = await search_queue.get()
+                remaining -= 1
                 
-                query_type = queries[i].query_type if i < len(queries) else "unknown"
-                search_results_list = results  # This is already a list of SearchResult objects
-                all_search_results.extend(search_results_list)
-                logger.info(f"Got {len(search_results_list)} search results for query type: {query_type}")
+                if success:
+                    query_type = queries[idx].query_type
+                    search_results_list = results  # This is already a list of SearchResult objects
+                    all_search_results.extend(search_results_list)
+                    logger.info(f"Got {len(search_results_list)} results for query type: {query_type}")
+                else:
+                    logger.error(f"Search failed for query {idx}: {str(results)}")
             
             # Update memory with search results
             memory.search_results = all_search_results
             memory.processing_stage = "search_completed"
+            logger.info(f"Completed all searches in {time.time() - search_start:.2f}s")
             
-            # 3. Fetch content from top URLs
+            # 3. Fetch content from top URLs with streaming results
+            logger.info(f"Step 3: Fetching content from top URLs for {business_name}")
+            fetch_start = time.time()
+            
             top_urls = []
             # Get top results for each query type
             query_types = set(result.query_type for result in all_search_results)
@@ -590,21 +695,138 @@ class BusinessInfoExtractor:
             
             # Remove duplicates while preserving order
             top_urls = list(dict.fromkeys(top_urls))
-            logger.info(f"Fetching content from {len(top_urls)} URLs for {business_name}")
+            logger.info(f"Fetching content from {len(top_urls)} URLs")
             
-            content_map = await fetch_content(top_urls)
-            logger.info(f"Fetched content from {len(content_map)} URLs")
+            # Create a queue for streaming content results
+            content_queue = asyncio.Queue()
+            content_map = {}
             
-            # 4. Preprocess content
-            chunks = await preprocess_content(content_map, business_name)
-            logger.info(f"Created {len(chunks)} content chunks")
+            # Create tasks that put content in the queue when done
+            async def fetch_url_and_enqueue(url_idx, url):
+                try:
+                    # Use a separate fetch function that processes one URL
+                    from playwright.async_api import async_playwright
+                    try:
+                        async with async_playwright() as p:
+                            browser = await p.chromium.launch(headless=True)
+                            context = await browser.new_context()
+                            page = await context.new_page()
+                            logger.info(f"Navigating to {url}")
+                            response = await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                            
+                            if response and response.ok:
+                                content = await page.evaluate("""() => {
+                                    // Remove unwanted elements
+                                    const elementsToRemove = document.querySelectorAll('nav, header, footer, .ads, #ads, .navigation, .menu');
+                                    for (let el of elementsToRemove) {
+                                        if (el && el.parentNode) el.parentNode.removeChild(el);
+                                    }
+                                    
+                                    // Get the cleaned content
+                                    return document.body.innerText;
+                                }""")
+                                await content_queue.put((True, url, content))
+                            else:
+                                status = response.status if response else "Unknown"
+                                await content_queue.put((False, url, f"Failed with status: {status}"))
+                            
+                            await page.close()
+                            await context.close()
+                            await browser.close()
+                    except Exception as browser_error:
+                        await content_queue.put((False, url, f"Browser error: {str(browser_error)}"))
+                except Exception as e:
+                    await content_queue.put((False, url, f"Error: {str(e)}"))
+            
+            # Start all content fetch tasks
+            content_tasks = []
+            for i, url in enumerate(top_urls):
+                task = asyncio.create_task(fetch_url_and_enqueue(i, url))
+                content_tasks.append(task)
+            
+            # Track when all content fetch tasks are done
+            content_done = asyncio.create_task(asyncio.gather(*content_tasks))
+            
+            # Process results as they become available
+            remaining_urls = len(top_urls)
+            
+            # Stream the content as it's fetched
+            while remaining_urls > 0:
+                success, url, content = await content_queue.get()
+                remaining_urls -= 1
+                
+                if success:
+                    content_map[url] = content
+                    logger.info(f"Fetched content from {url}")
+                else:
+                    content_map[url] = f"Failed to load content: {content}"
+                    logger.error(f"Failed to fetch {url}: {content}")
+            
+            logger.info(f"Completed all content fetching in {time.time() - fetch_start:.2f}s")
+            
+            # 4. Preprocess content with streaming
+            logger.info(f"Step 4: Preprocessing content for {business_name}")
+            preprocess_start = time.time()
+            
+            # Process chunks in a streaming fashion
+            chunks = []
+            
+            # Create a queue for streaming preprocessed chunks
+            chunk_queue = asyncio.Queue()
+            
+            async def preprocess_and_enqueue(url, content):
+                try:
+                    # Simple chunking by paragraphs
+                    paragraphs = [p for p in content.split('\n\n') if p.strip()]
+                    
+                    for i, paragraph in enumerate(paragraphs):
+                        # Only keep chunks with some minimum content
+                        if len(paragraph.strip()) < 50:
+                            continue
+                            
+                        chunk = ContentChunk(
+                            business_name=business_name,
+                            source_url=url,
+                            content=paragraph.strip(),
+                            chunk_index=i
+                        )
+                        await chunk_queue.put((True, chunk))
+                except Exception as e:
+                    logger.error(f"Error preprocessing content from {url}: {str(e)}")
+                    await chunk_queue.put((False, f"Error: {str(e)}"))
+            
+            # Start all preprocessing tasks
+            preprocess_tasks = []
+            total_items = sum(1 for content in content_map.values() if content)
+            
+            for url, content in content_map.items():
+                if not content:
+                    continue
+                task = asyncio.create_task(preprocess_and_enqueue(url, content))
+                preprocess_tasks.append(task)
+            
+            # Track when all preprocessing tasks are done
+            preprocess_done = asyncio.create_task(asyncio.gather(*preprocess_tasks))
+            await preprocess_done
+            
+            # Get all chunks from the queue
+            while not chunk_queue.empty():
+                success, item = await chunk_queue.get()
+                if success:
+                    chunks.append(item)
+            
+            logger.info(f"Created {len(chunks)} content chunks in {time.time() - preprocess_start:.2f}s")
             
             # Update memory with content chunks
             memory.content_chunks = chunks
             memory.processing_stage = "content_processed"
             
-            # 5. Extract business information
+            # 5. Extract business information with async streaming
+            logger.info(f"Step 5: Extracting business information for {business_name}")
+            extraction_start = time.time()
             business_info = await extract_business_info(self.llm, business_data, memory)
+            logger.info(f"Extracted business information in {time.time() - extraction_start:.2f}s")
+            
             logger.info(f"Extracted business info for {business_name} with confidence {business_info.confidence_score}")
             
             # 6. Update memory with final state
@@ -670,6 +892,97 @@ class BusinessInfoExtractor:
         
         return results
 
+async def _process_businesses_streaming(extractor: "BusinessInfoExtractor", df: pd.DataFrame):
+    """Stream business processing results as they complete for maximum async performance.
+    
+    This generator processes businesses in parallel but yields results as soon as they're ready.
+    """
+    # Create a queue to hold results as they complete
+    queue = asyncio.Queue()
+    total = len(df)
+    completed = 0
+    
+    # Create tasks for all businesses
+    tasks = []
+    for _, row in df.iterrows():
+        business_data = row.to_dict()
+        
+        # Create a task for each business that will put its result in the queue when done
+        async def process_and_enqueue(data):
+            try:
+                result = await extractor._process_single_business(data)
+                await queue.put((True, result))
+            except Exception as e:
+                error_msg = f"Error processing {data.get('business_name', 'unknown')}: {str(e)}"
+                logger.error(error_msg)
+                console.print(f"[bold red]Error:[/bold red] {error_msg}")
+                # Create a placeholder result for errors
+                placeholder = BusinessOwnerInfo(
+                    business_name=data.get("business_name", "Error"),
+                    owner_name=f"Error: {str(e)}",
+                    primary_address="Processing failed",
+                    state=data.get("state", ""),
+                    zip_code=data.get("zip_code", ""),
+                    confidence_score=0.0,
+                    sources=[]
+                )
+                await queue.put((False, placeholder))
+        
+        # Add the task to our list
+        task = asyncio.create_task(process_and_enqueue(business_data))
+        tasks.append(task)
+    
+    # Create a done_evt that will be set when all tasks are complete
+    done_evt = asyncio.Event()
+    
+    # Start a task to monitor for completion and set the event
+    async def monitor_completion():
+        await asyncio.gather(*tasks)
+        done_evt.set()
+    
+    monitor_task = asyncio.create_task(monitor_completion())
+    
+    # Yield results as they become available
+    try:
+        while completed < total:
+            # Wait for either a result or completion
+            get_next = asyncio.create_task(queue.get())
+            wait_done = asyncio.create_task(done_evt.wait())
+            
+            done, pending = await asyncio.wait(
+                [get_next, wait_done],
+                return_when=asyncio.FIRST_COMPLETED
+            )
+            
+            # Cancel the pending task
+            for task in pending:
+                task.cancel()
+            
+            # If we got a result, yield it
+            if get_next in done:
+                success, result = await get_next
+                completed += 1
+                
+                # Rich console logging with detailed status
+                if success:
+                    logger.info(f"Completed {completed}/{total}: {result.business_name}")
+                else:
+                    logger.warning(f"Failed {completed}/{total}: {result.business_name}")
+                
+                yield result
+            
+            # If done_evt is set and no more results, we're finished
+            if done_evt.is_set() and queue.empty() and completed >= total:
+                break
+    
+    finally:
+        # Clean up any remaining tasks
+        for task in tasks:
+            task.cancel()
+        
+        # Cancel the monitor task
+        monitor_task.cancel()
+
 async def run_extraction_workflow(excel_path: str, output_path: str = "business_owners.csv", max_concurrency: Optional[int] = None) -> str:
     """Run the complete extraction workflow from Excel file to CSV output with maximum parallelism.
     
@@ -719,10 +1032,31 @@ async def run_extraction_workflow(excel_path: str, output_path: str = "business_
         # Initialize extractor with performance optimizations
         extractor = BusinessInfoExtractor()
         
-        # Process all businesses in parallel with no restrictions
-        results = await extractor.process_businesses(df)
+        # Process all businesses in parallel with no restrictions using async streaming
+        with console.status("[bold green]Processing businesses in parallel...", spinner="dots") as status:
+            console.print(Panel("[bold]Starting parallel business processing[/bold]", 
+                               title="[blue]Business Extraction Workflow[/blue]", 
+                               expand=False))
+            
+            # Create a progress bar for visual feedback
+            with progress:
+                task_id = progress.add_task("[cyan]Processing businesses...", total=len(df))
+                
+                # Use async streaming to process businesses - this provides maximum parallelism
+                # with controlled streaming output
+                console.print("[bold blue]Starting maximum parallelism business processing[/bold blue]")
+                results = []
+                async for business_info in _process_businesses_streaming(extractor, df):
+                    results.append(business_info)
+                    progress.update(task_id, advance=1)
+                    # Rich console output with status information
+                    if business_info.owner_name and "Error:" not in business_info.owner_name:
+                        console.print(f"[green]✓[/green] Processed: {business_info.business_name} - Owner: {business_info.owner_name}")
+                    else:
+                        console.print(f"[yellow]⚠[/yellow] Processed with limited data: {business_info.business_name}")
         
         # Create output DataFrame directly (more efficient)
+        console.print("[bold green]Creating output data...[/bold green]")
         output_data = []
         for info in results:
             output_data.append({
