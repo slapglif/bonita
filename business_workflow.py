@@ -297,7 +297,7 @@ async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
         raise
 
 async def fetch_content(urls: List[str]) -> Dict[str, str]:
-    """Fetch and extract content from URLs using Playwright."""
+    """Fetch and extract content from URLs using Playwright's async API."""
     content_map = {}
     
     # Create batches to avoid overloading
@@ -307,6 +307,7 @@ async def fetch_content(urls: List[str]) -> Dict[str, str]:
     try:
         # Import here to catch ImportError early
         from playwright.async_api import async_playwright
+        from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
     except ImportError:
         logger.error("Playwright not found. Cannot fetch content.")
         # Return empty content for all URLs
@@ -314,68 +315,59 @@ async def fetch_content(urls: List[str]) -> Dict[str, str]:
     
     for batch in url_batches:
         try:
-            try:
-                # Process each batch using PlaywrightURLLoader
-                loader = PlaywrightURLLoader(
-                    urls=batch,
-                    continue_on_failure=True,
-                    remove_selectors=["nav", "header", "footer", ".ads", "#ads", ".navigation", ".menu"],
-                    headless=True
-                )
-                documents = loader.load()
+            # Use async Playwright directly to avoid sync issues
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context()
                 
-                # Map URLs to content
-                for doc in documents:
-                    source = doc.metadata.get("source", "")
-                    if source in batch:
-                        content_map[source] = doc.page_content
+                for url in batch:
+                    try:
+                        page = await context.new_page()
+                        logger.info(f"Navigating to {url}")
+                        response = await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                        
+                        if response and response.ok:
+                            # Extract all text from the page
+                            content = await page.evaluate("""() => {
+                                // Remove unwanted elements
+                                const elementsToRemove = document.querySelectorAll('nav, header, footer, .ads, #ads, .navigation, .menu');
+                                for (let el of elementsToRemove) {
+                                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                                }
+                                
+                                // Get the cleaned content
+                                return document.body.innerText;
+                            }""")
+                            
+                            content_map[url] = content
+                        else:
+                            status = response.status if response else "Unknown"
+                            logger.warning(f"Failed to load {url} - Status: {status}")
+                            content_map[url] = f"Failed to load content for {url} (Status: {status})"
+                            
+                        await page.close()
+                    except Exception as page_error:
+                        logger.error(f"Error fetching page {url}: {str(page_error)}")
+                        content_map[url] = f"Error loading content: {str(page_error)}"
                 
-            except ImportError as import_err:
-                if "unstructured" in str(import_err):
-                    logger.warning("Using fallback content extraction method due to missing unstructured package")
-                    
-                    # Fallback: Extract content directly with playwright
-                    async with async_playwright() as p:
-                        browser = await p.chromium.launch(headless=True)
-                        context = await browser.new_context()
-                        
-                        for url in batch:
-                            try:
-                                page = await context.new_page()
-                                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                                
-                                # Simple text extraction
-                                content = await page.evaluate("""() => {
-                                    // Extract main text content
-                                    return document.body.innerText;
-                                }""")
-                                
-                                content_map[url] = content
-                                await page.close()
-                            except Exception as page_error:
-                                logger.error(f"Error fetching page {url}: {str(page_error)}")
-                                content_map[url] = ""
-                        
-                        await browser.close()
-                else:
-                    # Re-raise if it's not the unstructured import error
-                    raise
-            
-            # Check for missing URLs in this batch
-            for url in batch:
-                if url not in content_map:
-                    logger.warning(f"Failed to load content from {url}")
-                    content_map[url] = ""  # Empty content for failed URLs
+                await browser.close()
             
             # Wait between batches to avoid overloading
             await asyncio.sleep(1)
             
         except Exception as e:
             logger.error(f"Error fetching content batch: {str(e)}")
-            # Add empty content for all URLs in the failed batch
+            # Add error message content for all URLs in the failed batch
             for url in batch:
                 if url not in content_map:
-                    content_map[url] = ""
+                    content_map[url] = f"Failed to load content: {str(e)}"
+    
+    # Ensure all URLs have an entry
+    for url in urls:
+        if url not in content_map:
+            content_map[url] = "No content retrieved"
+    
+    logger.info(f"Fetched content from {len(content_map)} URLs")
     
     return content_map
 
