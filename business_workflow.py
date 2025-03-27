@@ -12,7 +12,12 @@ import time
 from typing import Dict, List, Any, Tuple, Optional
 import pandas as pd
 from datetime import datetime
-from pydantic import BaseModel, Field
+try:
+    # For Pydantic v2
+    from pydantic import BaseModel, Field
+except ImportError:
+    # For older Pydantic versions
+    from pydantic.v1 import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from langchain_community.utilities.serpapi import SerpAPIWrapper

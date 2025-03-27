@@ -13,7 +13,12 @@ import pandas as pd
 from datetime import datetime
 
 from langchain.tools import BaseTool
-from pydantic import BaseModel, Field
+try:
+    # For Pydantic v2
+    from pydantic import BaseModel, Field
+except ImportError:
+    # For older Pydantic versions
+    from pydantic.v1 import BaseModel, Field
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

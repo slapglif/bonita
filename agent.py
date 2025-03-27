@@ -1,7 +1,12 @@
 import os
 import logging
 from typing import Dict, Any, List
-from pydantic import BaseModel, Field
+try:
+    # For Pydantic v2
+    from pydantic import BaseModel, Field
+except ImportError:
+    # For older Pydantic versions
+    from pydantic.v1 import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
 from langchain.agents import AgentExecutor, create_react_agent
