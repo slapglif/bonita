@@ -622,7 +622,7 @@ class BusinessInfoExtractor:
         
         return results
 
-async def run_extraction_workflow(excel_path: str, output_path: str = "business_owners.csv") -> str:
+async def run_extraction_workflow(excel_path: str, output_path: str = "business_owners.csv", max_concurrency: int = 5) -> str:
     """Run the complete extraction workflow from Excel file to CSV output."""
     start_time = time.time()
     logger.info(f"Starting business information extraction workflow from {excel_path}")
@@ -653,7 +653,6 @@ async def run_extraction_workflow(excel_path: str, output_path: str = "business_
         extractor = BusinessInfoExtractor()
         
         # Process businesses
-        max_concurrency = 5  # Default concurrent processing limit
         results = await extractor.process_businesses(df, max_concurrency)
         
         # Create output DataFrame

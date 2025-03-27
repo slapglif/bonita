@@ -66,7 +66,7 @@ async def _run_extraction_process(excel_path: str, max_concurrency: int = 5) -> 
             return ""
         
         # Run the workflow
-        output_path = await run_extraction_workflow(excel_path, output_path=f"business_owners_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", max_concurrency=max_concurrency)
+        output_path = await run_extraction_workflow(excel_path, output_path=f"business_owners_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
         
         # Read the results for a sample
         if os.path.exists(output_path):
