@@ -1,4 +1,4 @@
-modules = ["python-3.11", "pyright-extended", "ruff", "python-base-3.11", "python-3.12", "gcloud", "bash", "pyright", "python-base-3.12", "replit-rtld-loader"]
+modules = ["python-3.11", "pyright-extended", "ruff", "python-base-3.11", "python-3.12", "gcloud", "bash", "pyright", "python-base-3.12", "replit-rtld-loader", "postgresql-17", "postgresql-16", "docker"]
 
 [nix]
 channel = "stable-24_05"
@@ -8,7 +8,7 @@ deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
-runButton = "Flask Dev"
+runButton = "Flask App"
 
 [[workflows.workflow]]
 name = "Project"
@@ -33,6 +33,15 @@ args = "gunicorn --bind 0.0.0.0:5000 main:app"
 
 [[workflows.workflow]]
 name = "Flask Dev"
+author = 25177871
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+
+[[workflows.workflow]]
+name = "Flask App"
 author = 25177871
 mode = "sequential"
 

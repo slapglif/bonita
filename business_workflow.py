@@ -65,9 +65,9 @@ def get_langmem_store():
     store = InMemoryStore(
         index={
             "dims": 1536,  # Dimension for text-embedding-3-small
-            "embed": "openai:text-embedding-3-small",  # Specify the embedding model
-        }
-    )
+            "embed":
+            "openai:text-embedding-3-small",  # Specify the embedding model
+        })
     return store
 
 
@@ -79,7 +79,8 @@ logger.remove()  # Remove default handler
 logger.add(
     lambda msg: console.print(f"[bold blue]{msg}[/bold blue]"),
     level="INFO",
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>",
+    format=
+    "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>",
 )
 logger.add("workflow.log", rotation="10 MB", retention="1 day", level="DEBUG")
 
@@ -89,22 +90,23 @@ class BusinessQuery(BaseModel):
 
     business_name: str = Field(..., description="The full business name")
     location: str = Field(
-        ..., description="Business location including state and zip code"
-    )
+        ..., description="Business location including state and zip code")
     query_type: str = Field(
-        ..., description="Type of query: 'owner', 'address', 'contact'"
-    )
+        ..., description="Type of query: 'owner', 'address', 'contact'")
     search_query: str = Field(
-        ..., description="The full search query to submit to search engine"
-    )
+        ..., description="The full search query to submit to search engine")
 
     class Config:
         schema_extra = {
             "example": {
-                "business_name": "Absolute Home Improvement LLC",
-                "location": "MO 64040",
-                "query_type": "owner",
-                "search_query": "who owns Absolute Home Improvement LLC in Missouri 64040 owner name",
+                "business_name":
+                "Absolute Home Improvement LLC",
+                "location":
+                "MO 64040",
+                "query_type":
+                "owner",
+                "search_query":
+                "who owns Absolute Home Improvement LLC in Missouri 64040 owner name",
             }
         }
 
@@ -124,7 +126,8 @@ class SearchResult(BaseModel):
                 "business_name": "Absolute Home Improvement LLC",
                 "query_type": "owner",
                 "search_url": "https://example.com/business/info",
-                "snippet": "Absolute Home Improvement LLC is owned by John Smith who started the company in 2015.",
+                "snippet":
+                "Absolute Home Improvement LLC is owned by John Smith who started the company in 2015.",
                 "relevance_score": 0.85,
             }
         }
@@ -144,7 +147,8 @@ class ContentChunk(BaseModel):
             "example": {
                 "business_name": "Absolute Home Improvement LLC",
                 "source_url": "https://example.com/business/info",
-                "content": "John Smith is the founder and owner of Absolute Home Improvement LLC.",
+                "content":
+                "John Smith is the founder and owner of Absolute Home Improvement LLC.",
                 "chunk_index": 1,
                 "embedding_id": "emb_12345",
             }
@@ -156,9 +160,9 @@ class BusinessOwnerInfo(BaseModel):
 
     business_name: str
     owner_name: Optional[str] = Field(
-        None, description="Full name of the business owner"
-    )
-    primary_address: Optional[str] = Field(None, description="Primary business address")
+        None, description="Full name of the business owner")
+    primary_address: Optional[str] = Field(
+        None, description="Primary business address")
     state: str
     zip_code: str
     confidence_score: float = Field(..., ge=0.0, le=1.0)
@@ -167,12 +171,18 @@ class BusinessOwnerInfo(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "business_name": "Absolute Home Improvement LLC",
-                "owner_name": "John Smith",
-                "primary_address": "123 Main Street, Kansas City",
-                "state": "MO",
-                "zip_code": "64040",
-                "confidence_score": 0.92,
+                "business_name":
+                "Absolute Home Improvement LLC",
+                "owner_name":
+                "John Smith",
+                "primary_address":
+                "123 Main Street, Kansas City",
+                "state":
+                "MO",
+                "zip_code":
+                "64040",
+                "confidence_score":
+                0.92,
                 "sources": [
                     "https://example.com/business/info",
                     "https://example.com/directory",
@@ -198,14 +208,14 @@ class ProcessingMemory(BaseModel):
     search_results: List[SearchResult] = Field(default_factory=list)
     content_chunks: List[ContentChunk] = Field(default_factory=list)
     processing_stage: str = "initial"
-    owner_name_candidates: List[Tuple[str, float]] = Field(default_factory=list)
+    owner_name_candidates: List[Tuple[str,
+                                      float]] = Field(default_factory=list)
     address_candidates: List[Tuple[str, float]] = Field(default_factory=list)
     reflection_notes: Optional[str] = None
 
 
 async def generate_search_queries(
-    llm: ChatOpenAI, business_data: Dict[str, Any]
-) -> List[BusinessQuery]:
+        llm: ChatOpenAI, business_data: Dict[str, Any]) -> List[BusinessQuery]:
     """Generate multiple search queries for different aspects of business information."""
     # Extract business information
     business_name = business_data.get("business_name", "")
@@ -243,9 +253,10 @@ async def generate_search_queries(
 
     # Generate queries
     try:
-        queries_data = await query_chain.ainvoke(
-            {"business_name": business_name, "location": location}
-        )
+        queries_data = await query_chain.ainvoke({
+            "business_name": business_name,
+            "location": location
+        })
 
         # Convert to BusinessQuery objects
         queries = []
@@ -268,18 +279,21 @@ async def generate_search_queries(
                 business_name=business_name,
                 location=location,
                 query_type="owner",
-                search_query=f"who owns {business_name} in {location} owner name",
+                search_query=
+                f"who owns {business_name} in {location} owner name",
             ),
             BusinessQuery(
                 business_name=business_name,
                 location=location,
                 query_type="address",
-                search_query=f"{business_name} address {location} headquarters location",
+                search_query=
+                f"{business_name} address {location} headquarters location",
             ),
         ]
 
 
-@retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=5))
+@retry(stop=stop_after_attempt(2),
+       wait=wait_exponential(multiplier=1, min=2, max=5))
 async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
     """Perform search using SerpAPI with efficient error handling and retry logic.
     
@@ -289,57 +303,66 @@ async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
     start_time = time.time()
     try:
         # Log the search operation with minimal overhead
-        logger.info(f"Executing search query for: {query.business_name} ({query.query_type})")
-        
+        logger.info(
+            f"Executing search query for: {query.business_name} ({query.query_type})"
+        )
+
         # Verify API key without any UI overhead
         serpapi_key = os.environ.get("SERPAPI_API_KEY")
         if not serpapi_key:
             logger.error("SERPAPI_API_KEY environment variable not set")
             return []  # Return empty results without retry to avoid hanging
-        
+
         # Initialize and execute SerpAPI call directly
         search = SerpAPIWrapper(serpapi_api_key=serpapi_key)
-        search_result = await search.aresults(query.search_query)  # Use async version for better performance
-        
+        search_result = await search.aresults(
+            query.search_query)  # Use async version for better performance
+
         # Process results directly without complex UI operations
         results = []
-        if isinstance(search_result, dict) and "organic_results" in search_result:
+        if isinstance(search_result,
+                      dict) and "organic_results" in search_result:
             # Take top results (up to 10 for maximum data gathering)
-            for i, result in enumerate(search_result["organic_results"][:10]):  
+            for i, result in enumerate(search_result["organic_results"][:10]):
                 title = result.get("title", "")
                 snippet = result.get("snippet", "")
                 link = result.get("link", "")
-                
+
                 if not link:  # Try to find URL in other fields if link is missing
-                    link = result.get("displayed_link", result.get("displayLink", ""))
-                
+                    link = result.get("displayed_link",
+                                      result.get("displayLink", ""))
+
                 # Fast relevance scoring
                 position_score = 1.0 - (i * 0.1)  # Position-based score
-                
+
                 # Simple keyword matching for relevance without complex processing
                 relevance_boost = 0.0
                 search_text = (title + " " + snippet).lower()
-                
+
                 # Business name match
                 if query.business_name.lower() in search_text:
                     relevance_boost += 0.3
-                
+
                 # Query type keywords
                 query_type_terms = {
-                    "owner": ["owner", "founder", "ceo", "president", "director"],
-                    "address": ["address", "location", "headquarters", "office", "based"],
-                    "contact": ["contact", "phone", "email", "website", "reach"]
+                    "owner":
+                    ["owner", "founder", "ceo", "president", "director"],
+                    "address":
+                    ["address", "location", "headquarters", "office", "based"],
+                    "contact":
+                    ["contact", "phone", "email", "website", "reach"]
                 }
-                
+
                 # Check for query type keyword matches
                 for keyword in query_type_terms.get(query.query_type, []):
                     if keyword in search_text:
                         relevance_boost += 0.1
                         break  # Only count once per category
-                
+
                 # Calculate final score with bounds check
-                relevance_score = min(1.0, max(0.1, position_score + relevance_boost))
-                
+                relevance_score = min(
+                    1.0, max(0.1, position_score + relevance_boost))
+
                 # Create result object
                 search_result_obj = SearchResult(
                     business_name=query.business_name,
@@ -349,19 +372,24 @@ async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
                     relevance_score=relevance_score,
                 )
                 results.append(search_result_obj)
-            
+
             # Log completion without UI overhead
             elapsed = time.time() - start_time
-            logger.info(f"Found {len(results)} results for {query.business_name} in {elapsed:.2f}s")
+            logger.info(
+                f"Found {len(results)} results for {query.business_name} in {elapsed:.2f}s"
+            )
         else:
-            logger.warning(f"No organic results found for query: {query.search_query}")
-        
+            logger.warning(
+                f"No organic results found for query: {query.search_query}")
+
         return results
-        
+
     except Exception as e:
         # Log error without UI overhead
         elapsed = time.time() - start_time
-        logger.error(f"Search error for {query.business_name} ({elapsed:.2f}s): {str(e)}")
+        logger.error(
+            f"Search error for {query.business_name} ({elapsed:.2f}s): {str(e)}"
+        )
         # Return empty results to allow processing to continue with other queries
         return []
 
@@ -369,10 +397,10 @@ async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
 async def fetch_content(urls: List[str]) -> Dict[str, str]:
     """Fetch and extract content from URLs using LangChain's PlaywrightURLLoader with maximum parallelism."""
     content_map = {}
-    
+
     if not urls:
         return content_map
-    
+
     try:
         # Import here to catch ImportError early - only use LangChain's wrapper
         from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
@@ -380,52 +408,54 @@ async def fetch_content(urls: List[str]) -> Dict[str, str]:
         logger.error("PlaywrightURLLoader not found. Cannot fetch content.")
         # Return empty content for all URLs
         return {url: f"Failed to load content for {url}" for url in urls}
-    
+
     try:
         # LangChain's PlaywrightURLLoader already has built-in parallelism capabilities
-        logger.info(f"Fetching content from {len(urls)} URLs using PlaywrightURLLoader")
-        
-        # Configure loader with optimal performance settings
-        loader = PlaywrightURLLoader(
-            urls=urls,
-            remove_selectors=["nav", "header", "footer", ".ads", "#ads", ".navigation", ".menu"],
-            headless=True
+        logger.info(
+            f"Fetching content from {len(urls)} URLs using PlaywrightURLLoader"
         )
-        
+
+        # Configure loader with optimal performance settings
+        loader = PlaywrightURLLoader(urls=urls,
+                                     remove_selectors=[
+                                         "nav", "header", "footer", ".ads",
+                                         "#ads", ".navigation", ".menu"
+                                     ],
+                                     headless=True)
+
         # Load documents (this is already efficient and runs in parallel)
         docs = loader.load()
         logger.info(f"Successfully loaded {len(docs)} documents")
-        
+
         # Map documents to our content dictionary
         for doc in docs:
             url = doc.metadata.get("source")
             if url:
                 content_map[url] = doc.page_content
-        
+
         # Add placeholder entries for any URLs that failed to load
         for url in urls:
             if url not in content_map:
                 content_map[url] = f"Failed to load content for {url}"
-        
+
     except Exception as e:
         logger.error(f"Error fetching content: {str(e)}")
         # Add error message content for all URLs
         for url in urls:
             if url not in content_map:
                 content_map[url] = f"Failed to load content: {str(e)}"
-    
+
     # Ensure all URLs have an entry
     for url in urls:
         if url not in content_map:
             content_map[url] = "No content retrieved"
-    
+
     logger.info(f"Fetched content from {len(content_map)} URLs")
     return content_map
 
 
-async def preprocess_content(
-    content_map: Dict[str, str], business_name: str
-) -> List[ContentChunk]:
+async def preprocess_content(content_map: Dict[str, str],
+                             business_name: str) -> List[ContentChunk]:
     """Split and preprocess content into chunks for embedding."""
     chunks = []
 
@@ -453,8 +483,8 @@ async def preprocess_content(
 
 
 async def score_and_rank_chunks(
-    chunks: List[ContentChunk], query: str, embeddings: Embeddings
-) -> List[Tuple[ContentChunk, float]]:
+        chunks: List[ContentChunk], query: str,
+        embeddings: Embeddings) -> List[Tuple[ContentChunk, float]]:
     """Score and rank content chunks based on relevance to query."""
     if not chunks:
         return []
@@ -470,16 +500,17 @@ async def score_and_rank_chunks(
         query_embedding = embeddings.embed_query(query)
 
         # Get document embeddings
-        doc_embeddings = embeddings.embed_documents([doc.page_content for doc in docs])
+        doc_embeddings = embeddings.embed_documents(
+            [doc.page_content for doc in docs])
 
         # Calculate similarity scores
         scored_chunks = []
         for i, doc_embedding in enumerate(doc_embeddings):
             # Calculate cosine similarity
-            similarity = sum(a * b for a, b in zip(query_embedding, doc_embedding)) / (
-                sum(a * a for a in query_embedding) ** 0.5
-                * sum(b * b for b in doc_embedding) ** 0.5
-            )
+            similarity = sum(
+                a * b for a, b in zip(query_embedding, doc_embedding)) / (
+                    sum(a * a for a in query_embedding)**0.5 *
+                    sum(b * b for b in doc_embedding)**0.5)
 
             chunk = chunks[i]
             scored_chunks.append((chunk, similarity))
@@ -495,14 +526,14 @@ async def score_and_rank_chunks(
         return [(chunk, 0.5) for chunk in chunks]
 
 
-async def extract_business_info(
-    llm: ChatOpenAI, business_data: Dict[str, Any], memory: ProcessingMemory
-) -> BusinessOwnerInfo:
+async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
+                                memory: ProcessingMemory) -> BusinessOwnerInfo:
     """Extract structured business owner information from processed data."""
     # Format all the content chunks and search results
     chunk_texts = []
     for chunk in memory.content_chunks:
-        chunk_texts.append(f"SOURCE: {chunk.source_url}\nCONTENT: {chunk.content}")
+        chunk_texts.append(
+            f"SOURCE: {chunk.source_url}\nCONTENT: {chunk.content}")
 
     search_texts = []
     for result in memory.search_results:
@@ -554,23 +585,26 @@ async def extract_business_info(
 
     # Extract information
     try:
-        result = await extraction_chain.ainvoke(
-            {
-                "business_name": business_data.get("business_name", ""),
-                "state": business_data.get("state", ""),
-                "zip_code": business_data.get("zip_code", ""),
-                "search_results": "\n\n".join(search_texts),
-                "content_chunks": "\n\n".join(chunk_texts),
-            }
-        )
+        result = await extraction_chain.ainvoke({
+            "business_name":
+            business_data.get("business_name", ""),
+            "state":
+            business_data.get("state", ""),
+            "zip_code":
+            business_data.get("zip_code", ""),
+            "search_results":
+            "\n\n".join(search_texts),
+            "content_chunks":
+            "\n\n".join(chunk_texts),
+        })
 
         # Convert to BusinessOwnerInfo object
         business_info = BusinessOwnerInfo(
-            business_name=result.get(
-                "business_name", business_data.get("business_name", "")
-            ),
+            business_name=result.get("business_name",
+                                     business_data.get("business_name", "")),
             owner_name=result.get("owner_name", "Not found in sources"),
-            primary_address=result.get("primary_address", "Not found in sources"),
+            primary_address=result.get("primary_address",
+                                       "Not found in sources"),
             state=result.get("state", business_data.get("state", "")),
             zip_code=result.get("zip_code", business_data.get("zip_code", "")),
             confidence_score=float(result.get("confidence_score", 0.0)),
@@ -606,8 +640,7 @@ class BusinessInfoExtractor:
         logger.info("Initialized memory store for business extraction")
 
     async def _process_single_business(
-        self, business_data: Dict[str, Any]
-    ) -> BusinessOwnerInfo:
+            self, business_data: Dict[str, Any]) -> BusinessOwnerInfo:
         """Process a single business to extract owner information using fully async processing."""
         business_name = business_data.get("business_name", "")
         state = business_data.get("state", "")
@@ -615,17 +648,20 @@ class BusinessInfoExtractor:
 
         try:
             # Setup progress tracking and logging
-            logger.info(f"Processing business: {business_name} ({state} {zip_code})")
+            logger.info(
+                f"Processing business: {business_name} ({state} {zip_code})")
 
             # Initialize or retrieve processing memory
             memory = ProcessingMemory(
                 business_name=business_name,
                 state=state,
-                zip_code=str(zip_code),  # Convert to string to ensure proper typing
+                zip_code=str(
+                    zip_code),  # Convert to string to ensure proper typing
             )
 
             # 1. Generate search queries using async streaming
-            logger.info(f"Step 1: Generating search queries for {business_name}")
+            logger.info(
+                f"Step 1: Generating search queries for {business_name}")
             query_generation_start = time.time()
             queries = await generate_search_queries(self.llm, business_data)
             logger.info(
@@ -647,7 +683,8 @@ class BusinessInfoExtractor:
                     results = await search_with_query(query)
                     await search_queue.put((True, query_idx, results))
                 except Exception as e:
-                    logger.error(f"Error in search query {query_idx}: {str(e)}")
+                    logger.error(
+                        f"Error in search query {query_idx}: {str(e)}")
                     await search_queue.put((False, query_idx, e))
 
             # Start all search tasks
@@ -688,26 +725,31 @@ class BusinessInfoExtractor:
                             f"Got {len(search_results_list)} results for query at unknown index"
                         )
                 else:
-                    logger.error(f"Search failed for query {idx}: {str(results)}")
+                    logger.error(
+                        f"Search failed for query {idx}: {str(results)}")
 
             # Update memory with search results
             memory.search_results = all_search_results
             memory.processing_stage = "search_completed"
-            logger.info(f"Completed all searches in {time.time() - search_start:.2f}s")
+            logger.info(
+                f"Completed all searches in {time.time() - search_start:.2f}s")
 
             # 3. Fetch content from top URLs with streaming results
-            logger.info(f"Step 3: Fetching content from top URLs for {business_name}")
+            logger.info(
+                f"Step 3: Fetching content from top URLs for {business_name}")
             fetch_start = time.time()
 
             top_urls = []
             # Get top results for each query type
-            query_types = set(result.query_type for result in all_search_results)
+            query_types = set(result.query_type
+                              for result in all_search_results)
             for query_type in query_types:
                 # Get results for this query type and sort by relevance
                 type_results = [
                     r for r in all_search_results if r.query_type == query_type
                 ]
-                type_results.sort(key=lambda x: x.relevance_score, reverse=True)
+                type_results.sort(key=lambda x: x.relevance_score,
+                                  reverse=True)
                 # Take top 3 results for each query type
                 top_urls.extend([r.search_url for r in type_results[:3]])
 
@@ -724,30 +766,37 @@ class BusinessInfoExtractor:
                 try:
                     # Import PlaywrightURLLoader locally to handle import errors cleanly
                     from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
-                    
+
                     logger.info(f"Fetching content from URL {url_idx}: {url}")
-                    
+
                     # Use LangChain's PlaywrightURLLoader for a single URL
-                    loader = PlaywrightURLLoader(
-                        urls=[url],
-                        remove_selectors=["nav", "header", "footer", ".ads", "#ads", ".navigation", ".menu"],
-                        headless=True
-                    )
-                    
+                    loader = PlaywrightURLLoader(urls=[url],
+                                                 remove_selectors=[
+                                                     "nav", "header", "footer",
+                                                     ".ads", "#ads",
+                                                     ".navigation", ".menu"
+                                                 ],
+                                                 headless=True)
+
                     # Load document
                     try:
                         docs = loader.load()
                         if docs and len(docs) > 0:
                             content = docs[0].page_content
                             await content_queue.put((True, url, content))
-                            logger.info(f"Successfully loaded content from {url}")
+                            logger.info(
+                                f"Successfully loaded content from {url}")
                         else:
-                            await content_queue.put((False, url, "No content retrieved"))
+                            await content_queue.put(
+                                (False, url, "No content retrieved"))
                             logger.warning(f"No content retrieved from {url}")
                     except Exception as load_error:
-                        await content_queue.put((False, url, f"Load error: {str(load_error)}"))
-                        logger.error(f"Error loading content from {url}: {str(load_error)}")
-                        
+                        await content_queue.put(
+                            (False, url, f"Load error: {str(load_error)}"))
+                        logger.error(
+                            f"Error loading content from {url}: {str(load_error)}"
+                        )
+
                 except Exception as e:
                     await content_queue.put((False, url, f"Error: {str(e)}"))
                     logger.error(f"General error processing {url}: {str(e)}")
@@ -794,7 +843,9 @@ class BusinessInfoExtractor:
             async def preprocess_and_enqueue(url, content):
                 try:
                     # Simple chunking by paragraphs
-                    paragraphs = [p for p in content.split("\n\n") if p.strip()]
+                    paragraphs = [
+                        p for p in content.split("\n\n") if p.strip()
+                    ]
 
                     for i, paragraph in enumerate(paragraphs):
                         # Only keep chunks with some minimum content
@@ -809,7 +860,8 @@ class BusinessInfoExtractor:
                         )
                         await chunk_queue.put((True, chunk))
                 except Exception as e:
-                    logger.error(f"Error preprocessing content from {url}: {str(e)}")
+                    logger.error(
+                        f"Error preprocessing content from {url}: {str(e)}")
                     await chunk_queue.put((False, f"Error: {str(e)}"))
 
             # Start all preprocessing tasks
@@ -819,7 +871,8 @@ class BusinessInfoExtractor:
             for url, content in content_map.items():
                 if not content:
                     continue
-                task = asyncio.create_task(preprocess_and_enqueue(url, content))
+                task = asyncio.create_task(preprocess_and_enqueue(
+                    url, content))
                 preprocess_tasks.append(task)
 
             # Track when all preprocessing tasks are done
@@ -842,9 +895,11 @@ class BusinessInfoExtractor:
             memory.processing_stage = "content_processed"
 
             # 5. Extract business information with async streaming
-            logger.info(f"Step 5: Extracting business information for {business_name}")
+            logger.info(
+                f"Step 5: Extracting business information for {business_name}")
             extraction_start = time.time()
-            business_info = await extract_business_info(self.llm, business_data, memory)
+            business_info = await extract_business_info(
+                self.llm, business_data, memory)
             logger.info(
                 f"Extracted business information in {time.time() - extraction_start:.2f}s"
             )
@@ -859,7 +914,8 @@ class BusinessInfoExtractor:
             return business_info
 
         except Exception as e:
-            logger.error(f"Error processing business {business_name}: {str(e)}")
+            logger.error(
+                f"Error processing business {business_name}: {str(e)}")
             # Return default info with error
             return BusinessOwnerInfo(
                 business_name=business_name,
@@ -872,8 +928,9 @@ class BusinessInfoExtractor:
             )
 
     async def process_businesses(
-        self, df: pd.DataFrame, max_concurrency: Optional[int] = None
-    ) -> List[BusinessOwnerInfo]:
+            self,
+            df: pd.DataFrame,
+            max_concurrency: Optional[int] = None) -> List[BusinessOwnerInfo]:
         """Process all businesses in parallel for maximum speed.
 
         The max_concurrency parameter is kept for API compatibility but is now optional.
@@ -914,14 +971,14 @@ class BusinessInfoExtractor:
                 results.append(result)
 
             completed_count += 1
-            logger.info(f"Completed {completed_count}/{total_count} businesses")
+            logger.info(
+                f"Completed {completed_count}/{total_count} businesses")
 
         return results
 
 
-async def _process_businesses_streaming(
-    extractor: "BusinessInfoExtractor", df: pd.DataFrame
-):
+async def _process_businesses_streaming(extractor: "BusinessInfoExtractor",
+                                        df: pd.DataFrame):
     """Stream business processing results as they complete for maximum async performance.
 
     This generator processes businesses in parallel but yields results as soon as they're ready.
@@ -991,8 +1048,7 @@ async def _process_businesses_streaming(
             wait_done = asyncio.create_task(done_evt.wait())
 
             done, pending = await asyncio.wait(
-                [get_next, wait_done], return_when=asyncio.FIRST_COMPLETED
-            )
+                [get_next, wait_done], return_when=asyncio.FIRST_COMPLETED)
 
             # Cancel the pending task
             for task in pending:
@@ -1003,7 +1059,8 @@ async def _process_businesses_streaming(
                 try:
                     queue_result = await get_next
                     # Unpack the tuple safely
-                    if isinstance(queue_result, tuple) and len(queue_result) == 2:
+                    if isinstance(queue_result,
+                                  tuple) and len(queue_result) == 2:
                         success, result = queue_result
                         completed += 1
 
@@ -1019,7 +1076,8 @@ async def _process_businesses_streaming(
 
                         yield result
                     else:
-                        logger.error(f"Unexpected queue result format: {queue_result}")
+                        logger.error(
+                            f"Unexpected queue result format: {queue_result}")
                 except Exception as e:
                     logger.error(f"Error processing queue result: {str(e)}")
                     # Continue the loop to avoid hanging
@@ -1065,7 +1123,8 @@ async def run_extraction_workflow(
         # Read Excel file using pandas with optimized options
         df = pd.read_excel(
             excel_path,
-            engine="openpyxl",  # Use openpyxl for better performance with xlsx files
+            engine=
+            "openpyxl",  # Use openpyxl for better performance with xlsx files
             dtype={
                 "Business Zip": str  # Pre-convert zip codes to strings
             },
@@ -1084,31 +1143,32 @@ async def run_extraction_workflow(
 
         # Check required columns
         required_columns = ["business_name", "state", "zip_code"]
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        missing_columns = [
+            col for col in required_columns if col not in df.columns
+        ]
         if missing_columns:
-            logger.error(f"Missing required columns in Excel file: {missing_columns}")
-            raise ValueError(f"Excel file missing required columns: {missing_columns}")
+            logger.error(
+                f"Missing required columns in Excel file: {missing_columns}")
+            raise ValueError(
+                f"Excel file missing required columns: {missing_columns}")
 
         # Initialize extractor with performance optimizations
         extractor = BusinessInfoExtractor()
 
         # Process all businesses in parallel with no restrictions using async streaming
-        with console.status(
-            "[bold green]Processing businesses in parallel...", spinner="dots"
-        ) as status:
+        with console.status("[bold green]Processing businesses in parallel...",
+                            spinner="dots") as status:
             console.print(
                 Panel(
                     "[bold]Starting parallel business processing[/bold]",
                     title="[blue]Business Extraction Workflow[/blue]",
                     expand=False,
-                )
-            )
+                ))
 
             # Create a progress bar for visual feedback
             with progress:
-                task_id = progress.add_task(
-                    "[cyan]Processing businesses...", total=len(df)
-                )
+                task_id = progress.add_task("[cyan]Processing businesses...",
+                                            total=len(df))
 
                 # Use async streaming to process businesses - this provides maximum parallelism
                 # with controlled streaming output
@@ -1116,14 +1176,13 @@ async def run_extraction_workflow(
                     "[bold blue]Starting maximum parallelism business processing[/bold blue]"
                 )
                 results = []
-                async for business_info in _process_businesses_streaming(extractor, df):
+                async for business_info in _process_businesses_streaming(
+                        extractor, df):
                     results.append(business_info)
                     progress.update(task_id, advance=1)
                     # Rich console output with status information
-                    if (
-                        business_info.owner_name
-                        and "Error:" not in business_info.owner_name
-                    ):
+                    if (business_info.owner_name
+                            and "Error:" not in business_info.owner_name):
                         console.print(
                             f"[green]✓[/green] Processed: {business_info.business_name} - Owner: {business_info.owner_name}"
                         )
@@ -1136,17 +1195,15 @@ async def run_extraction_workflow(
         console.print("[bold green]Creating output data...[/bold green]")
         output_data = []
         for info in results:
-            output_data.append(
-                {
-                    "business_name": info.business_name,
-                    "owner_name": info.owner_name,
-                    "primary_address": info.primary_address,
-                    "state": info.state,
-                    "zip_code": info.zip_code,
-                    "confidence_score": info.confidence_score,
-                    "sources": "; ".join(info.sources),
-                }
-            )
+            output_data.append({
+                "business_name": info.business_name,
+                "owner_name": info.owner_name,
+                "primary_address": info.primary_address,
+                "state": info.state,
+                "zip_code": info.zip_code,
+                "confidence_score": info.confidence_score,
+                "sources": "; ".join(info.sources),
+            })
 
         output_df = pd.DataFrame(output_data)
 
@@ -1159,7 +1216,8 @@ async def run_extraction_workflow(
         output_df.to_csv(output_path, index=False)
 
         elapsed_time = time.time() - start_time
-        logger.info(f"Extraction workflow completed in {elapsed_time:.2f} seconds")
+        logger.info(
+            f"Extraction workflow completed in {elapsed_time:.2f} seconds")
         logger.info(f"Results saved to {output_path}")
         logger.info(
             f"Processed {len(results)} businesses at {len(results)/elapsed_time:.2f} businesses/second"

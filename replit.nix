@@ -1,5 +1,11 @@
 { pkgs }: {
     deps = [
+      pkgs.python311Packages.pytesseract
+      pkgs.python312Packages.pytesseract
+      pkgs.unstructured-api
+      pkgs.python312Packages.unstructured-api-tools
+      pkgs.python312Packages.unstructured
+      pkgs.python311Packages.unstructured-api-tools
         pkgs.python311
         pkgs.python311Packages.flask
         pkgs.python311Packages.gunicorn

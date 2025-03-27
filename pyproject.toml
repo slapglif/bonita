@@ -2,6 +2,7 @@
 name = "repl-nix-workspace"
 version = "0.1.0"
 description = "Add your description here"
+package-mode = false
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.11.14",
@@ -17,17 +18,17 @@ dependencies = [
     "langgraph>=0.3.20",
     "langgraph-checkpoint>=2.0.23",
     "langmem>=0.0.17",
+    "loguru>=0.7.3",
     "openai>=1.68.2",
     "openpyxl>=3.1.5",
     "pandas>=2.2.3",
     "playwright>=1.51.0",
     "psycopg2-binary>=2.9.10",
     "pydantic>=2.10.6",
+    "rich>=13.9.4",
     "serpapi>=0.1.5",
     "tenacity>=9.0.0",
-    "rich>=13.9.4",
-    "loguru>=0.7.3",
-    "unstructured-pytesseract==0.3.13",
+    "unstructured-pytesseract>=0.3.15",
 ]
 
 [[tool.uv.index]]
@@ -1151,3 +1152,18 @@ yta-general-utils = [{ index = "pytorch-cpu", marker = "platform_system == 'Linu
 zensvi = [{ index = "pytorch-cpu", marker = "platform_system == 'Linux'" }]
 zetascale = [{ index = "pytorch-cpu", marker = "platform_system == 'Linux'" }]
 zuko = [{ index = "pytorch-cpu", marker = "platform_system == 'Linux'" }]
+
+[tool.poetry]
+name = "workspace"
+version = "0.1.0"
+description = ""
+authors = ["Michael Brown <kurosama112@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

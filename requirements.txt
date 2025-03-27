@@ -20,6 +20,6 @@ psycopg2-binary
 pydantic
 serpapi
 tenacity
-rich
+richuv p
 loguru
 unstructured-pytesseract
