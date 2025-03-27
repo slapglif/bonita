@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.python312Packages.pip
     pkgs.python311Packages.gunicorn
     pkgs.python312Packages.gunicorn
     pkgs.python312Packages.langchain-text-splitters
