@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Langmem React Agent</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container py-4">
+        <header class="pb-3 mb-4 border-bottom">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-robot fs-2 me-3"></i>
+                <h1>Langmem React Agent</h1>
+            </div>
+            <p class="text-muted mt-2">An AI agent with memory and web search capabilities</p>
+        </header>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Agent Conversation</h5>
+                        <button id="clear-chat" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-trash"></i> Clear Chat
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="chat-history" class="chat-history mb-3">
+                            <div class="welcome-message">
+                                <div class="message assistant-message">
+                                    <div class="message-content">
+                                        <p>Hello! I'm your AI assistant with memory and web search capabilities. How can I help you today?</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="thinking-indicator" class="thinking-indicator d-none">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                                <span class="visually-hidden">Thinking...</span>
+                            </div>
+                            <span class="ms-2">Thinking...</span>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="user-input" class="form-control" placeholder="Ask me anything...">
+                            <button id="send-button" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Agent Thought Process</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="thought-process" class="thought-process">
+                            <p class="text-muted">The agent's thought process will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="pt-3 mt-4 text-muted border-top">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>Powered by Langmem, LangChain, and OpenAI</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>© 2023</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
