@@ -285,12 +285,8 @@ async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
         raise
 
 async def fetch_content(urls: List[str]) -> Dict[str, str]:
-    """Fetch and extract content from URLs using Playwright's async API."""
+    """Fetch and extract content from URLs using Playwright's async API with maximum parallelism."""
     content_map = {}
-    
-    # Create batches to avoid overloading
-    batch_size = 3
-    url_batches = [urls[i:i+batch_size] for i in range(0, len(urls), batch_size)]
     
     try:
         # Import here to catch ImportError early
@@ -301,54 +297,57 @@ async def fetch_content(urls: List[str]) -> Dict[str, str]:
         # Return empty content for all URLs
         return {url: f"Failed to load content for {url}" for url in urls}
     
-    for batch in url_batches:
-        try:
-            # Use async Playwright directly to avoid sync issues
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context()
-                
-                for url in batch:
-                    try:
-                        page = await context.new_page()
-                        logger.info(f"Navigating to {url}")
-                        response = await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+    try:
+        # Use async Playwright directly for maximum parallelism
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            
+            # Function to process a single URL
+            async def process_url(url):
+                try:
+                    # Create a new context for each URL for better isolation
+                    context = await browser.new_context()
+                    page = await context.new_page()
+                    logger.info(f"Navigating to {url}")
+                    response = await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                    
+                    if response and response.ok:
+                        # Extract all text from the page
+                        content = await page.evaluate("""() => {
+                            // Remove unwanted elements
+                            const elementsToRemove = document.querySelectorAll('nav, header, footer, .ads, #ads, .navigation, .menu');
+                            for (let el of elementsToRemove) {
+                                if (el && el.parentNode) el.parentNode.removeChild(el);
+                            }
+                            
+                            // Get the cleaned content
+                            return document.body.innerText;
+                        }""")
                         
-                        if response and response.ok:
-                            # Extract all text from the page
-                            content = await page.evaluate("""() => {
-                                // Remove unwanted elements
-                                const elementsToRemove = document.querySelectorAll('nav, header, footer, .ads, #ads, .navigation, .menu');
-                                for (let el of elementsToRemove) {
-                                    if (el && el.parentNode) el.parentNode.removeChild(el);
-                                }
-                                
-                                // Get the cleaned content
-                                return document.body.innerText;
-                            }""")
-                            
-                            content_map[url] = content
-                        else:
-                            status = response.status if response else "Unknown"
-                            logger.warning(f"Failed to load {url} - Status: {status}")
-                            content_map[url] = f"Failed to load content for {url} (Status: {status})"
-                            
-                        await page.close()
-                    except Exception as page_error:
-                        logger.error(f"Error fetching page {url}: {str(page_error)}")
-                        content_map[url] = f"Error loading content: {str(page_error)}"
-                
-                await browser.close()
+                        content_map[url] = content
+                    else:
+                        status = response.status if response else "Unknown"
+                        logger.warning(f"Failed to load {url} - Status: {status}")
+                        content_map[url] = f"Failed to load content for {url} (Status: {status})"
+                        
+                    await page.close()
+                    await context.close()
+                except Exception as page_error:
+                    logger.error(f"Error fetching page {url}: {str(page_error)}")
+                    content_map[url] = f"Error loading content: {str(page_error)}"
             
-            # Wait between batches to avoid overloading
-            await asyncio.sleep(1)
+            # Create tasks for all URLs and process them in parallel
+            tasks = [process_url(url) for url in urls]
+            await asyncio.gather(*tasks)
             
-        except Exception as e:
-            logger.error(f"Error fetching content batch: {str(e)}")
-            # Add error message content for all URLs in the failed batch
-            for url in batch:
-                if url not in content_map:
-                    content_map[url] = f"Failed to load content: {str(e)}"
+            await browser.close()
+            
+    except Exception as e:
+        logger.error(f"Error fetching content: {str(e)}")
+        # Add error message content for all URLs
+        for url in urls:
+            if url not in content_map:
+                content_map[url] = f"Failed to load content: {str(e)}"
     
     # Ensure all URLs have an entry
     for url in urls:
@@ -557,12 +556,22 @@ class BusinessInfoExtractor:
             queries = await generate_search_queries(self.llm, business_data)
             logger.info(f"Generated {len(queries)} search queries for {business_name}")
             
-            # 2. Execute search queries
+            # 2. Execute search queries in parallel
+            # Create tasks for all search queries and execute them simultaneously
+            search_tasks = [search_with_query(query) for query in queries]
+            search_results_groups = await asyncio.gather(*search_tasks, return_exceptions=True)
+            
+            # Process and merge search results
             all_search_results = []
-            for query in queries:
-                results = await search_with_query(query)
-                all_search_results.extend(results)
-                logger.info(f"Got {len(results)} search results for query type: {query.query_type}")
+            for i, results in enumerate(search_results_groups):
+                if isinstance(results, Exception):
+                    logger.error(f"Error in search query {i}: {str(results)}")
+                    continue
+                
+                query_type = queries[i].query_type if i < len(queries) else "unknown"
+                search_results_list = results  # This is already a list of SearchResult objects
+                all_search_results.extend(search_results_list)
+                logger.info(f"Got {len(search_results_list)} search results for query type: {query_type}")
             
             # Update memory with search results
             memory.search_results = all_search_results
@@ -616,48 +625,89 @@ class BusinessInfoExtractor:
                 sources=[]
             )
     
-    async def process_businesses(self, df: pd.DataFrame, max_concurrency: int = 5) -> List[BusinessOwnerInfo]:
-        """Process a batch of businesses with controlled concurrency."""
+    async def process_businesses(self, df: pd.DataFrame, max_concurrency: Optional[int] = None) -> List[BusinessOwnerInfo]:
+        """Process all businesses in parallel for maximum speed.
+        
+        The max_concurrency parameter is kept for API compatibility but is now optional.
+        All businesses are processed in parallel without limiting concurrency.
+        """
         results = []
-        semaphore = asyncio.Semaphore(max_concurrency)
+        completed_count = 0
+        total_count = len(df)
         
-        async def process_with_semaphore(business_data):
-            async with semaphore:
-                return await self._process_single_business(business_data)
-        
-        # Create tasks for all businesses
+        # Create tasks for all businesses without using a semaphore
         tasks = []
         for _, row in df.iterrows():
             business_data = row.to_dict()
-            tasks.append(process_with_semaphore(business_data))
+            tasks.append(self._process_single_business(business_data))
         
-        # Process all tasks and collect results
-        for task in asyncio.as_completed(tasks):
-            result = await task
-            results.append(result)
-            logger.info(f"Completed {len(results)}/{len(tasks)} businesses")
+        # Process all tasks in parallel with maximum concurrency
+        # Use gather instead of as_completed for maximum parallelism
+        all_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Process the results
+        for result in all_results:
+            if isinstance(result, Exception):
+                # Handle exception case
+                logger.error(f"Error processing business: {str(result)}")
+                # Add a placeholder result
+                placeholder_result = BusinessOwnerInfo(
+                    business_name="Error",
+                    owner_name=f"Error: {str(result)}",
+                    primary_address="Processing failed",
+                    state="",
+                    zip_code="",
+                    confidence_score=0.0,
+                    sources=[]
+                )
+                results.append(placeholder_result)
+            else:
+                # Normal result
+                results.append(result)
+            
+            completed_count += 1
+            logger.info(f"Completed {completed_count}/{total_count} businesses")
         
         return results
 
-async def run_extraction_workflow(excel_path: str, output_path: str = "business_owners.csv", max_concurrency: int = 5) -> str:
-    """Run the complete extraction workflow from Excel file to CSV output."""
+async def run_extraction_workflow(excel_path: str, output_path: str = "business_owners.csv", max_concurrency: Optional[int] = None) -> str:
+    """Run the complete extraction workflow from Excel file to CSV output with maximum parallelism.
+    
+    This function processes all businesses in parallel, with no rate limiting or concurrency constraints
+    to achieve maximum speed. The max_concurrency parameter is kept for API compatibility but is ignored.
+    
+    Args:
+        excel_path: Path to the Excel file containing business data
+        output_path: Path to save the output CSV (default generates a timestamped filename)
+        max_concurrency: Optional parameter kept for backward compatibility (ignored)
+        
+    Returns:
+        Path to the output CSV file
+    """
     start_time = time.time()
-    logger.info(f"Starting business information extraction workflow from {excel_path}")
+    logger.info(f"Starting business information extraction workflow from {excel_path} with maximum parallelism")
     
     try:
-        # Read Excel file
-        df = pd.read_excel(excel_path)
+        # Read Excel file in parallel-friendly way using pandas
+        # Read Excel file using pandas with optimized options
+        df = pd.read_excel(
+            excel_path, 
+            engine='openpyxl',  # Use openpyxl for better performance with xlsx files
+            dtype={
+                'Business Zip': str  # Pre-convert zip codes to strings
+            }
+        )
         logger.info(f"Loaded {len(df)} businesses from Excel file")
         
-        # Map column names
+        # Map column names 
         column_mapping = {
             "Business": "business_name",
             "Business ST": "state",
             "Business Zip": "zip_code"
         }
         
-        # Rename columns to standard names
-        df = df.rename(columns=column_mapping)
+        # Rename columns to standard names (inplace for speed)
+        df.rename(columns=column_mapping, inplace=True)
         
         # Check required columns
         required_columns = ["business_name", "state", "zip_code"]
@@ -666,18 +716,16 @@ async def run_extraction_workflow(excel_path: str, output_path: str = "business_
             logger.error(f"Missing required columns in Excel file: {missing_columns}")
             raise ValueError(f"Excel file missing required columns: {missing_columns}")
         
-        # Convert zip_code column to string to prevent type errors
-        df["zip_code"] = df["zip_code"].astype(str)
-        
-        # Initialize extractor
+        # Initialize extractor with performance optimizations
         extractor = BusinessInfoExtractor()
         
-        # Process businesses
-        results = await extractor.process_businesses(df, max_concurrency)
+        # Process all businesses in parallel with no restrictions
+        results = await extractor.process_businesses(df)
         
-        # Create output DataFrame
-        output_df = pd.DataFrame([
-            {
+        # Create output DataFrame directly (more efficient)
+        output_data = []
+        for info in results:
+            output_data.append({
                 "business_name": info.business_name,
                 "owner_name": info.owner_name,
                 "primary_address": info.primary_address,
@@ -685,19 +733,22 @@ async def run_extraction_workflow(excel_path: str, output_path: str = "business_
                 "zip_code": info.zip_code,
                 "confidence_score": info.confidence_score,
                 "sources": "; ".join(info.sources)
-            }
-            for info in results
-        ])
+            })
         
-        # Save to CSV
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_df = pd.DataFrame(output_data)
+        
+        # Generate output path if not provided
         if not output_path:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_path = f"business_owners_{timestamp}.csv"
+        
+        # Save to CSV with optimized settings
         output_df.to_csv(output_path, index=False)
         
         elapsed_time = time.time() - start_time
         logger.info(f"Extraction workflow completed in {elapsed_time:.2f} seconds")
         logger.info(f"Results saved to {output_path}")
+        logger.info(f"Processed {len(results)} businesses at {len(results)/elapsed_time:.2f} businesses/second")
         
         return output_path
         

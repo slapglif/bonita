@@ -38,7 +38,7 @@ _extraction_status = {
 class BusinessExtractionInput(BaseModel):
     """Input for the business extraction process."""
     excel_path: str = Field(..., description="Path to the Excel file containing business data")
-    max_concurrency: int = Field(5, description="Maximum number of businesses to process concurrently")
+    max_concurrency: Optional[int] = Field(None, description="Optional parameter (no longer used). Processing uses maximum parallelism by default.")
 
 class BusinessExtractionResults(BaseModel):
     """Results of the business extraction process."""
@@ -49,8 +49,12 @@ class BusinessExtractionResults(BaseModel):
     sample_results: List[Dict[str, Any]] = []
     output_path: Optional[str] = None
 
-async def _run_extraction_process(excel_path: str, max_concurrency: int = 5) -> str:
-    """Run the full extraction process and return the output file path."""
+async def _run_extraction_process(excel_path: str, max_concurrency: Optional[int] = None) -> str:
+    """Run the full extraction process and return the output file path.
+    
+    Note: max_concurrency parameter is kept for backward compatibility but is not used.
+    All processing occurs with maximum parallelism.
+    """
     global _extraction_status
     
     try:
@@ -102,7 +106,7 @@ async def _run_extraction_process(excel_path: str, max_concurrency: int = 5) -> 
         _extraction_status["error"] = str(e)
         return ""
 
-def start_extraction_process(excel_path: str, max_concurrency: int = 5) -> BusinessExtractionResults:
+def start_extraction_process(excel_path: str, max_concurrency: Optional[int] = None) -> BusinessExtractionResults:
     """Start the extraction process as a background task."""
     global _extraction_task, _extraction_status
     
@@ -159,12 +163,12 @@ class ExtractBusinessInfoTool(BaseTool):
     """
     args_schema: Type[BusinessExtractionInput] = BusinessExtractionInput
     
-    def _run(self, excel_path: str, max_concurrency: int = 5) -> Dict[str, Any]:
+    def _run(self, excel_path: str, max_concurrency: Optional[int] = None) -> Dict[str, Any]:
         """Run the business information extraction process."""
         result = start_extraction_process(excel_path, max_concurrency)
         return result.dict()
     
-    async def _arun(self, excel_path: str, max_concurrency: int = 5) -> Dict[str, Any]:
+    async def _arun(self, excel_path: str, max_concurrency: Optional[int] = None) -> Dict[str, Any]:
         """Run the business information extraction process asynchronously."""
         # Use the synchronous version, which already manages async background tasks
         return self._run(excel_path, max_concurrency)

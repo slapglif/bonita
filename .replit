@@ -1,4 +1,4 @@
-modules = ["python-3.11", "pyright-extended", "ruff", "python-base-3.11", "python-3.12", "gcloud", "bash"]
+modules = ["python-3.11", "pyright-extended", "ruff", "python-base-3.11", "python-3.12", "gcloud", "bash", "pyright"]
 
 [nix]
 channel = "stable-24_05"

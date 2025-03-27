@@ -1,5 +1,10 @@
 {pkgs}: {
   deps = [
+    pkgs.python311Packages.pytest-playwright
+    pkgs.playwright-test
+    pkgs.python311Packages.playwright
+    pkgs.python311Packages.playwright-stealth
+    pkgs.python311Packages.playwrightcapture
     pkgs.ffmpeg
     pkgs.playwright
     pkgs.glibcLocales

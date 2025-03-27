@@ -1,0 +1,128 @@
+
+[2025-03-27 02:48:15 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:15 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:15 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:15 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:15 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:15 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:15 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:16 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:16 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:16 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:16 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:16 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:16 +0000] [23349] [INFO] Handling signal: winch
+[2025-03-27 02:48:16 +0000] [23349] [INFO] Handling signal: winch
+INFO:app:Business routes registered successfully
+INFO:app:Initializing agent...
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/langgraph/store/base/embed.py:95: LangChainBetaWarning: The function `init_embeddings` is in beta. It is actively being worked on, so the API may change.
+  return init_embeddings(embed)
+INFO:tools:SerpAPI Search tool added
+INFO:tools:Playwright Web Page Loader tool added
+INFO:tools:Added 2 business extraction tools
+INFO:agent:Initializing LangMem for agent memory
+INFO:agent:Agent created successfully with memory management capabilities
+INFO:langmem.reflection:Queue size: 0
+INFO:app:Agent initialized successfully
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pydantic/_internal/_config.py:345: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+INFO:business_workflow:Starting business information extraction workflow from sample.xlsx
+INFO:business_workflow:Loaded 200 businesses from Excel file
+INFO:business_workflow:Initialized memory store for business extraction
+INFO:business_workflow:Processing business: AC Optimal Health LLC (GA 31558)
+INFO:business_workflow:Processing business: ACE Fire & Safety Services LL (OK 74047)
+INFO:business_workflow:Processing business: Accelerance Inc. (NC 28202)
+INFO:business_workflow:Processing business: Acti-Kare Responsive In-Home C (CA 92653)
+INFO:business_workflow:Processing business: Activus Moving LLC (TX 78726)
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:business_workflow:Generated 3 search queries for Activus Moving LLC
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: owner
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: address
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: contact
+INFO:business_workflow:Fetching content from 6 URLs for Activus Moving LLC
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:business_workflow:Generated 3 search queries for AC Optimal Health LLC
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: owner
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: address
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: contact
+INFO:business_workflow:Fetching content from 6 URLs for AC Optimal Health LLC
+INFO:business_workflow:Generated 3 search queries for Acti-Kare Responsive In-Home C
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: owner
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: address
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:business_workflow:Got 5 search results for query type: contact
+INFO:business_workflow:Fetching content from 5 URLs for Acti-Kare Responsive In-Home C
+INFO:business_workflow:Generated 3 search queries for ACE Fire & Safety Services LL
+[2025-03-27 02:48:45 +0000] [23360] [INFO] Worker reloading: /home/runner/workspace/business_workflow.py modified
+[2025-03-27 02:48:45 +0000] [23360] [INFO] Worker exiting (pid: 23360)
+[2025-03-27 02:48:46 +0000] [23431] [INFO] Booting worker with pid: 23431
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: write EPIPE
+    at WriteWrap.onWriteComplete [as oncomplete] (node:internal/stream_base_commons:94:16)
+Emitted 'error' event on Socket instance at:
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  errno: -32,
+  code: 'EPIPE',
+  syscall: 'write'
+}
+
+Node.js v20.12.2
+INFO:app:Business routes registered successfully
+INFO:app:Initializing agent...
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/langgraph/store/base/embed.py:95: LangChainBetaWarning: The function `init_embeddings` is in beta. It is actively being worked on, so the API may change.
+  return init_embeddings(embed)
+INFO:tools:SerpAPI Search tool added
+INFO:tools:Playwright Web Page Loader tool added
+INFO:tools:Added 2 business extraction tools
+INFO:agent:Initializing LangMem for agent memory
+INFO:agent:Agent created successfully with memory management capabilities
+INFO:langmem.reflection:Queue size: 0
+INFO:app:Agent initialized successfully
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
