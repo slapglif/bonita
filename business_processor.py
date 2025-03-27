@@ -48,6 +48,7 @@ class BusinessExtractionResults(BaseModel):
     error: Optional[str] = None
     sample_results: List[Dict[str, Any]] = []
     output_path: Optional[str] = None
+    analysis_summary: Optional[str] = None  # Added field to provide React agent with insights
 
 async def _run_extraction_process(excel_path: str, max_concurrency: Optional[int] = None) -> str:
     """Run the full extraction process and return the output file path.
@@ -89,6 +90,25 @@ async def _run_extraction_process(excel_path: str, max_concurrency: Optional[int
                 _extraction_status["status"] = "completed"
                 _extraction_status["output_path"] = output_path
                 
+                # Try to analyze results for improved agent observations
+                try:
+                    # Calculate basic statistics about the results
+                    successful_extractions = results_df[~results_df['owner_name'].str.contains('Error:', na=False)]
+                    unsuccessful_extractions = results_df[results_df['owner_name'].str.contains('Error:', na=False)]
+                    
+                    # Generate summary if not already set
+                    if not _extraction_status.get("analysis_summary"):
+                        _extraction_status["analysis_summary"] = f"""
+                        EXTRACTION SUMMARY:
+                        - Total businesses: {len(results_df)}
+                        - Successful extractions: {len(successful_extractions)} ({len(successful_extractions)/len(results_df)*100:.1f}%)
+                        - Unsuccessful extractions: {len(unsuccessful_extractions)} ({len(unsuccessful_extractions)/len(results_df)*100:.1f}%)
+                        
+                        OUTPUT FILE: {output_path}
+                        """
+                except Exception as stats_error:
+                    logger.warning(f"Error generating statistics: {stats_error}")
+                
             except Exception as e:
                 logger.error(f"Error reading results file: {str(e)}")
                 _extraction_status["status"] = "completed"
@@ -117,7 +137,8 @@ def start_extraction_process(excel_path: str, max_concurrency: Optional[int] = N
         "status": "starting",
         "error": None,
         "sample_results": [],
-        "output_path": None
+        "output_path": None,
+        "analysis_summary": None  # Initialize the new field
     }
     
     # Cancel any existing task
@@ -158,7 +179,16 @@ class ExtractBusinessInfoTool(BaseTool):
     name: str = "extract_business_info"
     description: str = """
     Extracts business owner names and primary addresses for businesses in an Excel file.
-    Uses advanced multi-query generation, web search, content crawling and RAG techniques.
+    Uses advanced multi-query generation, web search, content crawling and RAG techniques
+    with React-style reasoning for dynamic search expansion based on confidence thresholds.
+    
+    Features:
+    - Casts the widest net possible with diverse search strategies
+    - Processes in parallel with maximum concurrency and performance
+    - Ranks and assesses information sources by reliability
+    - Provides detailed analysis on extraction confidence and reasoning
+    - Dynamically expands search when information is insufficient
+    
     All processing is done asynchronously for efficient handling of large datasets.
     """
     args_schema: Type[BusinessExtractionInput] = BusinessExtractionInput
@@ -178,7 +208,14 @@ class CheckExtractionStatusTool(BaseTool):
     name: str = "check_extraction_status"
     description: str = """
     Checks the current status of the business information extraction process.
-    Returns progress information and sample results if available.
+    Returns progress information, detailed analysis, and sample results if available.
+    
+    The status response includes:
+    - Current processing state (starting, running, completed, error)
+    - Progress metrics (processed count, total count)
+    - Sample results from processing
+    - Detailed analysis summary with confidence metrics and performance statistics
+    - Path to the output CSV file when processing is complete
     """
     
     def _run(self) -> Dict[str, Any]:

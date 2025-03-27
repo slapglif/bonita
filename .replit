@@ -1,4 +1,4 @@
-modules = ["python-3.11", "pyright-extended", "ruff", "python-base-3.11", "python-3.12", "gcloud", "bash", "pyright", "python-base-3.12", "replit-rtld-loader", "postgresql-17", "postgresql-16", "docker"]
+modules = ["python-3.11", "pyright-extended", "ruff", "python-base-3.11", "python-3.12", "gcloud", "bash", "pyright", "python-base-3.12", "replit-rtld-loader", "postgresql-17", "postgresql-16", "docker", "nodejs-20"]
 
 [nix]
 channel = "stable-24_05"

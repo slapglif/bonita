@@ -9,6 +9,7 @@ The workflow uses LangMem to store and retrieve semantic information between ste
 import os
 import asyncio
 import time
+import traceback
 from typing import Dict, List, Any, Tuple, Optional
 import pandas as pd
 from datetime import datetime
@@ -156,7 +157,7 @@ class ContentChunk(BaseModel):
 
 
 class BusinessOwnerInfo(BaseModel):
-    """Final extracted business owner information."""
+    """Final extracted business owner information with analysis insights."""
 
     business_name: str
     owner_name: Optional[str] = Field(
@@ -167,6 +168,16 @@ class BusinessOwnerInfo(BaseModel):
     zip_code: str
     confidence_score: float = Field(..., ge=0.0, le=1.0)
     sources: List[str] = Field(default_factory=list)
+    analysis_notes: Optional[str] = Field(
+        None, description="Detailed analysis of information sources and reasoning process")
+    
+    # Additional fields for improved information tracking
+    owner_confidence: float = Field(0.0, ge=0.0, le=1.0, 
+        description="Confidence specifically for owner information")
+    address_confidence: float = Field(0.0, ge=0.0, le=1.0, 
+        description="Confidence specifically for address information")
+    alternative_owners: List[str] = Field(default_factory=list,
+        description="Other potential owners if multiple possibilities exist")
 
     class Config:
         schema_extra = {
@@ -216,33 +227,63 @@ class ProcessingMemory(BaseModel):
 
 async def generate_search_queries(
         llm: ChatOpenAI, business_data: Dict[str, Any]) -> List[BusinessQuery]:
-    """Generate multiple search queries for different aspects of business information."""
+    """Generate multiple search queries for different aspects of business information.
+    
+    This enhanced version casts a wider net by:
+    1. Generating more query variations per category
+    2. Including industry-specific and business-type-specific queries
+    3. Adding location-based diversification
+    4. Using more advanced search operators for precise results
+    """
     # Extract business information
     business_name = business_data.get("business_name", "")
     state = business_data.get("state", "")
     zip_code = business_data.get("zip_code", "")
     location = f"{state} {zip_code}"
 
-    # Create the prompt
+    # Create the prompt with enhanced search strategy
     query_generation_prompt = ChatPromptTemplate.from_template("""
-    You are a business research assistant specializing in finding detailed information about businesses.
+    You are an EXPERT business intelligence researcher specializing in discovering hard-to-find information about businesses.
+    Your task is to cast the WIDEST POSSIBLE NET when generating search queries - we need to maximize information discovery.
     
-    I need to research the following business:
+    I need comprehensive research on this business:
     Business Name: {business_name}
     Location: {location}
     
-    Generate 3 distinct search queries to find the following information:
-    1. The owner or owners of the business (full names)
-    2. The primary address of the business
-    3. General business contact information
+    Generate multiple diverse search queries (at least 10 total) across these categories:
+    1. OWNER INFORMATION (5+ queries): 
+       - Direct owner searches using different name formats and terms (CEO, founder, president, principal)
+       - Secretary of State business filings and registrations
+       - Industry-specific directories and trade associations
+       - Business network sites like LinkedIn
+       - News articles about the business
+       
+    2. ADDRESS INFORMATION (3+ queries):
+       - Physical location and headquarters searches
+       - State business registration address records
+       - Multiple variations of location queries
+       
+    3. BUSINESS VERIFICATION (2+ queries):
+       - Contact information for verification
+       - Business license and registration numbers
+       
+    FORMAT REQUIREMENTS:
+    Return your response as a JSON array with each query containing:
+    - business_name: "{business_name}"
+    - location: "{location}"
+    - query_type: One of ["owner", "address", "registration", "contact", "industry"]
+    - search_query: The exact query text to run, using advanced operators when helpful
     
-    Format your response as a JSON array of query objects with these fields:
-    - business_name: The full business name
-    - location: Business location information
-    - query_type: Either 'owner', 'address', or 'contact'
-    - search_query: The full search query to submit to search engine
+    Make each search query HIGHLY DIVERSE - use different search techniques, advanced operators, 
+    and varied approaches for maximum coverage.
     
-    Make each query specific and targeted to find the exact information needed.
+    DIVERSITY REQUIREMENTS:
+    - Use different search syntaxes (quotes, site: operator, etc.)
+    - Target different source types (official records, social media, news, directories)
+    - Use different word orders and synonyms
+    - Incorporate both exact phrase matches and broader contextual searches
+    
+    IMPORTANT: The React agent will utilize these search results to decide where to expand investigations.
     """)
 
     # Parse output as JSON
@@ -528,7 +569,15 @@ async def score_and_rank_chunks(
 
 async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
                                 memory: ProcessingMemory) -> BusinessOwnerInfo:
-    """Extract structured business owner information from processed data."""
+    """Extract structured business owner information from processed data with advanced analysis.
+    
+    This enhanced version implements a React-style thinking approach to extract information by:
+    1. Analyzing all available evidence systematically
+    2. Identifying contradictions or confirmations across multiple sources
+    3. Weighing source credibility differently (e.g., official records > social media)
+    4. Using multiple reasoning steps before reaching conclusions
+    5. Identifying patterns across different source types
+    """
     # Format all the content chunks and search results
     chunk_texts = []
     for chunk in memory.content_chunks:
@@ -541,9 +590,9 @@ async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
             f"QUERY TYPE: {result.query_type}\nURL: {result.search_url}\nSNIPPET: {result.snippet}"
         )
 
-    # Create the prompt
+    # Create the enhanced prompt with React-style reasoning
     extraction_prompt = ChatPromptTemplate.from_template("""
-    You are a business information extraction specialist.
+    You are an expert business intelligence analyst who uses systematic reasoning to extract verified information.
     
     BUSINESS INFORMATION:
     Business Name: {business_name}
@@ -557,13 +606,40 @@ async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
     {content_chunks}
     
     TASK:
-    Based on ONLY the information provided above, extract the following details about the business:
+    Using a React-style multi-step analysis process with explicit reasoning, extract the following business details:
     
-    1. Business Owner's Full Name
+    1. Business Owner's Full Name(s)
     2. Primary Business Address
     
-    If specific information is not clearly stated in the provided content, indicate with "Not found in sources".
-    Calculate a confidence score from 0.0 to 1.0 for each extracted piece of information.
+    ANALYSIS PROCESS - Follow this structured approach:
+    
+    Step 1: SOURCE EVALUATION
+    - Categorize each source by type (government record, business directory, social media, news, etc.)
+    - Rank sources by likely reliability (government > business registries > news > social > general web)
+    - Identify which sources are most authoritative for each information type
+    
+    Step 2: EVIDENCE COLLECTION
+    - Identify all explicit mentions of owners, executives, founders, or principals
+    - Collect all address information, noting which appear to be primary business locations
+    - Note any contradictory information across sources
+    - List alternative candidates when multiple possibilities exist
+    
+    Step 3: PATTERN RECOGNITION
+    - Look for repeated mentions of the same person/address across multiple independent sources
+    - Identify patterns that suggest official vs. subsidiary relationships
+    - Analyze consistency of information across different source types
+    
+    Step 4: CONFIDENCE ASSESSMENT
+    - Evaluate confidence based on source reliability, consistency across sources, specificity of claims
+    - Calculate separate confidence scores for owner and address information
+    - Explicitly note when evidence is insufficient or contradictory
+    - Document your reasoning about confidence levels
+    
+    Step 5: EXPANSION DECISION
+    - Determine if additional research would be beneficial
+    - Note specific areas where more information would increase confidence
+    
+    If specific information is not clearly stated or cannot be reliably determined, indicate with "Not found in sources".
     
     Respond in JSON format:
     {{
@@ -573,7 +649,13 @@ async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
         "state": "{state}",
         "zip_code": "{zip_code}",
         "confidence_score": 0.95,
-        "sources": ["list", "of", "source", "urls", "that", "provided", "the", "information"]
+        "sources": ["list", "of", "source", "urls", "that", "provided", "the", "information"],
+        "analysis_notes": "Detailed analysis of your reasoning process, source evaluation, and evidence assessment",
+        "owner_confidence": 0.85,
+        "address_confidence": 0.90,
+        "alternative_owners": ["List", "of", "alternative", "owner", "candidates"],
+        "needs_expansion": true/false,
+        "expansion_rationale": "Explanation of why additional search would be helpful or unnecessary"
     }}
     """)
 
@@ -598,7 +680,25 @@ async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
             "\n\n".join(chunk_texts),
         })
 
-        # Convert to BusinessOwnerInfo object
+        # Convert to enhanced BusinessOwnerInfo object with detailed analysis
+        # Evaluate need for search expansion based on explicit agent output
+        needs_expansion = result.get("needs_expansion", False)
+        expansion_rationale = result.get("expansion_rationale", "")
+        
+        # Add to analysis notes if search expansion is needed
+        analysis_notes = result.get("analysis_notes", "No detailed analysis available")
+        if needs_expansion:
+            analysis_notes += f"\n\nAUTOMATIC SEARCH EXPANSION RECOMMENDED:\n{expansion_rationale}"
+            
+        # Check confidence thresholds to determine if we need more information
+        owner_confidence = float(result.get("owner_confidence", result.get("confidence_score", 0.0)))
+        address_confidence = float(result.get("address_confidence", result.get("confidence_score", 0.0)))
+        
+        # If confidence is too low but not explicitly marked for expansion, add recommendation
+        if (owner_confidence < 0.6 or address_confidence < 0.6) and not needs_expansion:
+            analysis_notes += "\n\nLOW CONFIDENCE DETECTED: Additional search strategies may improve results."
+            
+        # Create the business owner info with enhanced analysis
         business_info = BusinessOwnerInfo(
             business_name=result.get("business_name",
                                      business_data.get("business_name", "")),
@@ -609,13 +709,18 @@ async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
             zip_code=result.get("zip_code", business_data.get("zip_code", "")),
             confidence_score=float(result.get("confidence_score", 0.0)),
             sources=result.get("sources", []),
+            # Add the enhanced analysis fields
+            analysis_notes=analysis_notes,
+            owner_confidence=owner_confidence,
+            address_confidence=address_confidence,
+            alternative_owners=result.get("alternative_owners", []),
         )
 
         return business_info
 
     except Exception as e:
         logger.error(f"Error extracting business info: {str(e)}")
-        # Return default object with error indication
+        # Return default object with error indication and analysis notes
         return BusinessOwnerInfo(
             business_name=business_data.get("business_name", ""),
             owner_name="Error during extraction",
@@ -624,6 +729,10 @@ async def extract_business_info(llm: ChatOpenAI, business_data: Dict[str, Any],
             zip_code=business_data.get("zip_code", ""),
             confidence_score=0.0,
             sources=[],
+            analysis_notes=f"Error during extraction: {str(e)}\n{traceback.format_exc()}",
+            owner_confidence=0.0,
+            address_confidence=0.0,
+            alternative_owners=[],
         )
 
 
@@ -916,7 +1025,7 @@ class BusinessInfoExtractor:
         except Exception as e:
             logger.error(
                 f"Error processing business {business_name}: {str(e)}")
-            # Return default info with error
+            # Return default info with error and complete error details in analysis notes
             return BusinessOwnerInfo(
                 business_name=business_name,
                 owner_name=f"Error: {str(e)}",
@@ -925,6 +1034,10 @@ class BusinessInfoExtractor:
                 zip_code=str(zip_code),
                 confidence_score=0.0,
                 sources=[],
+                analysis_notes=f"Processing error: {str(e)}\nTraceback: {traceback.format_exc()}",
+                owner_confidence=0.0,
+                address_confidence=0.0,
+                alternative_owners=[],
             )
 
     async def process_businesses(
@@ -955,7 +1068,7 @@ class BusinessInfoExtractor:
             if isinstance(result, Exception):
                 # Handle exception case
                 logger.error(f"Error processing business: {str(result)}")
-                # Add a placeholder result
+                # Add a placeholder result with full error details
                 placeholder_result = BusinessOwnerInfo(
                     business_name="Error",
                     owner_name=f"Error: {str(result)}",
@@ -964,6 +1077,10 @@ class BusinessInfoExtractor:
                     zip_code="",
                     confidence_score=0.0,
                     sources=[],
+                    analysis_notes=f"Processing error: {str(result)}",
+                    owner_confidence=0.0,
+                    address_confidence=0.0,
+                    alternative_owners=[],
                 )
                 results.append(placeholder_result)
             else:
@@ -999,7 +1116,7 @@ async def _process_businesses_streaming(extractor: "BusinessInfoExtractor",
             )
             logger.error(error_msg)
             console.print(f"[bold red]Error:[/bold red] {error_msg}")
-            # Create a placeholder result for errors
+            # Create a placeholder result for errors with complete analysis notes
             placeholder = BusinessOwnerInfo(
                 business_name=data.get("business_name", "Error"),
                 owner_name=f"Error: {str(e)}",
@@ -1008,6 +1125,10 @@ async def _process_businesses_streaming(extractor: "BusinessInfoExtractor",
                 zip_code=data.get("zip_code", ""),
                 confidence_score=0.0,
                 sources=[],
+                analysis_notes=f"Processing error: {str(e)}\nTraceback: {traceback.format_exc()}",
+                owner_confidence=0.0,
+                address_confidence=0.0,
+                alternative_owners=[],
             )
             await queue.put((False, placeholder))
 
@@ -1202,7 +1323,11 @@ async def run_extraction_workflow(
                 "state": info.state,
                 "zip_code": info.zip_code,
                 "confidence_score": info.confidence_score,
+                "owner_confidence": info.owner_confidence,
+                "address_confidence": info.address_confidence,
+                "alternative_owners": "; ".join(info.alternative_owners) if info.alternative_owners else "",
                 "sources": "; ".join(info.sources),
+                "analysis_notes": info.analysis_notes or "",
             })
 
         output_df = pd.DataFrame(output_data)
@@ -1215,6 +1340,45 @@ async def run_extraction_workflow(
         # Save to CSV with optimized settings
         output_df.to_csv(output_path, index=False)
 
+        # Generate analysis summary for the React agent
+        total_businesses = len(results)
+        successful_count = sum(1 for info in results 
+                              if info.owner_name and "Error:" not in info.owner_name 
+                              and info.owner_confidence > 0.6)
+        partial_count = sum(1 for info in results 
+                           if info.owner_name and "Error:" not in info.owner_name 
+                           and info.owner_confidence <= 0.6)
+        failed_count = total_businesses - successful_count - partial_count
+        
+        # Calculate average confidence scores
+        avg_confidence = sum(info.confidence_score for info in results) / total_businesses if total_businesses > 0 else 0
+        avg_owner_confidence = sum(info.owner_confidence for info in results 
+                                  if info.owner_name and "Error:" not in info.owner_name) / successful_count if successful_count > 0 else 0
+        avg_address_confidence = sum(info.address_confidence for info in results 
+                                     if info.primary_address and "Error:" not in info.primary_address) / successful_count if successful_count > 0 else 0
+        
+        # Create analysis summary for React agent
+        analysis_summary = f"""
+        EXTRACTION RESULTS SUMMARY:
+        - Total businesses processed: {total_businesses}
+        - Successfully extracted with high confidence: {successful_count} ({successful_count/total_businesses*100:.1f}%)
+        - Partial extraction with lower confidence: {partial_count} ({partial_count/total_businesses*100:.1f}%)
+        - Failed extractions: {failed_count} ({failed_count/total_businesses*100:.1f}%)
+        
+        CONFIDENCE METRICS:
+        - Average overall confidence: {avg_confidence:.2f}
+        - Average owner information confidence: {avg_owner_confidence:.2f}
+        - Average address information confidence: {avg_address_confidence:.2f}
+        
+        PROCESSING PERFORMANCE:
+        - Total processing time: {time.time() - start_time:.2f} seconds
+        - Processing rate: {total_businesses/(time.time() - start_time):.2f} businesses/second
+        """
+        
+        # Update the global status with the analysis summary
+        if "_extraction_status" in globals():
+            globals()["_extraction_status"]["analysis_summary"] = analysis_summary
+        
         elapsed_time = time.time() - start_time
         logger.info(
             f"Extraction workflow completed in {elapsed_time:.2f} seconds")

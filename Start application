@@ -1,1 +1,1 @@
-bash min_app.sh
+python3 minimal_app.py
