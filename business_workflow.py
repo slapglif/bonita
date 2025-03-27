@@ -281,170 +281,89 @@ async def generate_search_queries(
 
 @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=5))
 async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
-    """Perform search using SerpAPI with retries and error handling."""
-    with console.status(
-        f"[bold green]Searching for {query.business_name} ({query.query_type})...",
-        spinner="dots",
-    ):
-        try:
-            # Log the search operation with detailed information
-            logger.info(f"Search operation started for: {query.business_name}")
-            console.print(
-                Panel(
-                    f"[bold]Search Query:[/bold] {query.search_query}",
-                    title=f"[blue]{query.business_name} - {query.query_type}[/blue]",
-                    expand=False,
+    """Perform search using SerpAPI with efficient error handling and retry logic.
+    
+    This implementation maximizes parallel processing capability by using SerpAPI directly
+    with minimal overhead.
+    """
+    start_time = time.time()
+    try:
+        # Log the search operation with minimal overhead
+        logger.info(f"Executing search query for: {query.business_name} ({query.query_type})")
+        
+        # Verify API key without any UI overhead
+        serpapi_key = os.environ.get("SERPAPI_API_KEY")
+        if not serpapi_key:
+            logger.error("SERPAPI_API_KEY environment variable not set")
+            return []  # Return empty results without retry to avoid hanging
+        
+        # Initialize and execute SerpAPI call directly
+        search = SerpAPIWrapper(serpapi_api_key=serpapi_key)
+        search_result = await search.aresults(query.search_query)  # Use async version for better performance
+        
+        # Process results directly without complex UI operations
+        results = []
+        if isinstance(search_result, dict) and "organic_results" in search_result:
+            # Take top results (up to 10 for maximum data gathering)
+            for i, result in enumerate(search_result["organic_results"][:10]):  
+                title = result.get("title", "")
+                snippet = result.get("snippet", "")
+                link = result.get("link", "")
+                
+                if not link:  # Try to find URL in other fields if link is missing
+                    link = result.get("displayed_link", result.get("displayLink", ""))
+                
+                # Fast relevance scoring
+                position_score = 1.0 - (i * 0.1)  # Position-based score
+                
+                # Simple keyword matching for relevance without complex processing
+                relevance_boost = 0.0
+                search_text = (title + " " + snippet).lower()
+                
+                # Business name match
+                if query.business_name.lower() in search_text:
+                    relevance_boost += 0.3
+                
+                # Query type keywords
+                query_type_terms = {
+                    "owner": ["owner", "founder", "ceo", "president", "director"],
+                    "address": ["address", "location", "headquarters", "office", "based"],
+                    "contact": ["contact", "phone", "email", "website", "reach"]
+                }
+                
+                # Check for query type keyword matches
+                for keyword in query_type_terms.get(query.query_type, []):
+                    if keyword in search_text:
+                        relevance_boost += 0.1
+                        break  # Only count once per category
+                
+                # Calculate final score with bounds check
+                relevance_score = min(1.0, max(0.1, position_score + relevance_boost))
+                
+                # Create result object
+                search_result_obj = SearchResult(
+                    business_name=query.business_name,
+                    query_type=query.query_type,
+                    search_url=link,
+                    snippet=snippet,
+                    relevance_score=relevance_score,
                 )
-            )
-
-            # Initialize SerpAPI wrapper
-            serpapi_key = os.environ.get("SERPAPI_API_KEY")
-            if not serpapi_key:
-                error_msg = "SERPAPI_API_KEY not set in environment variables"
-                logger.error(error_msg)
-                console.print(f"[bold red]Error:[/bold red] {error_msg}")
-                return []
-
-            logger.debug(f"Using SerpAPI key: {serpapi_key[:4]}...")
-            console.print("[green]✓[/green] SerpAPI key found")
-
-            try:
-                # Create and configure SerpAPI wrapper with explicit exception handling
-                search = SerpAPIWrapper(serpapi_api_key=serpapi_key)
-                logger.debug("SerpAPI wrapper initialized")
-
-                # Perform search with detailed timing
-                start_time = time.time()
-                console.print(
-                    f"[yellow]Executing search query: '{query.search_query}'[/yellow]"
-                )
-
-                # Catch any specific SerpAPI errors
-                try:
-                    search_result = search.results(query.search_query)
-                    elapsed = time.time() - start_time
-                    logger.info(f"Search completed in {elapsed:.2f} seconds")
-                except Exception as search_error:
-                    logger.error(
-                        f"SerpAPI search error: {str(search_error)} - {type(search_error).__name__}"
-                    )
-                    console.print(
-                        f"[bold red]SerpAPI Search Error:[/bold red] {str(search_error)}"
-                    )
-
-                    # For now, we'll return empty results rather than retry
-                    # This helps us avoid waiting for retries when the API key has issues
-                    return []
-
-            except Exception as wrapper_error:
-                logger.error(
-                    f"SerpAPI wrapper initialization error: {str(wrapper_error)}"
-                )
-                console.print(
-                    f"[bold red]SerpAPI Initialization Error:[/bold red] {str(wrapper_error)}"
-                )
-                return []
-
-            # Process organic results
-            results = []
-            if "organic_results" in search_result:
-                result_count = len(search_result["organic_results"][:5])
-                logger.info(
-                    f"Found {result_count} organic results for {query.business_name}"
-                )
-                console.print(
-                    f"[green]✓[/green] Retrieved {result_count} results for {query.business_name}"
-                )
-
-                # Create a table to display search results
-                result_table = Table(
-                    title=f"Search Results for {query.business_name}", show_header=True
-                )
-                result_table.add_column("Title", style="cyan", no_wrap=False)
-                result_table.add_column("Snippet", style="green", no_wrap=False)
-                result_table.add_column("Score", style="magenta", justify="right")
-
-                for i, result in enumerate(
-                    search_result["organic_results"][:5]
-                ):  # Limit to top 5 results
-                    title = result.get("title", "")
-                    snippet = result.get("snippet", "")
-                    link = result.get("link", "")
-
-                    # Calculate a simple relevance score based on position
-                    position_score = 1.0 - (i * 0.15)  # 1.0, 0.85, 0.7, 0.55, 0.4
-
-                    # Add basic keywords matching for the relevance score
-                    business_keywords = query.business_name.lower().split()
-                    query_type_keywords = {
-                        "owner": ["owner", "founder", "ceo", "president"],
-                        "address": ["address", "location", "headquarters", "office"],
-                        "contact": ["contact", "phone", "email", "website"],
-                    }
-
-                    keyword_matches = 0
-                    search_text = (title + " " + snippet).lower()
-
-                    # Check business name keywords
-                    for keyword in business_keywords:
-                        if keyword in search_text:
-                            keyword_matches += 1
-                            logger.debug(f"Matched business keyword: {keyword}")
-
-                    # Check query type specific keywords
-                    for keyword in query_type_keywords.get(query.query_type, []):
-                        if keyword in search_text:
-                            keyword_matches += (
-                                2  # Give more weight to query type matches
-                            )
-                            logger.debug(f"Matched query type keyword: {keyword}")
-
-                    # Calculate final relevance score
-                    keyword_score = min(
-                        0.5, keyword_matches * 0.1
-                    )  # Max 0.5 for keyword matches
-                    relevance_score = min(1.0, position_score + keyword_score)
-
-                    # Create SearchResult object
-                    search_result_obj = SearchResult(
-                        business_name=query.business_name,
-                        query_type=query.query_type,
-                        search_url=link,
-                        snippet=snippet,
-                        relevance_score=relevance_score,
-                    )
-                    results.append(search_result_obj)
-
-                    # Add to result table
-                    truncated_title = title[:50] + "..." if len(title) > 50 else title
-                    truncated_snippet = (
-                        snippet[:80] + "..." if len(snippet) > 80 else snippet
-                    )
-                    result_table.add_row(
-                        truncated_title, truncated_snippet, f"{relevance_score:.2f}"
-                    )
-
-                # Display the results table
-                console.print(result_table)
-            else:
-                logger.warning(f"No organic results found for {query.business_name}")
-                console.print(
-                    f"[yellow]No organic results found for {query.business_name}[/yellow]"
-                )
-                # Log the complete search result for debugging
-                logger.debug(f"Full search result: {search_result}")
-
-            logger.info(
-                f"Processed {len(results)} search results for {query.business_name}"
-            )
-            return results
-
-        except Exception as e:
-            error_details = f"Error during search for {query.search_query}: {str(e)}"
-            logger.error(error_details)
-            console.print(f"[bold red]Search Error:[/bold red] {error_details}")
-            # Raise for retry
-            raise
+                results.append(search_result_obj)
+            
+            # Log completion without UI overhead
+            elapsed = time.time() - start_time
+            logger.info(f"Found {len(results)} results for {query.business_name} in {elapsed:.2f}s")
+        else:
+            logger.warning(f"No organic results found for query: {query.search_query}")
+        
+        return results
+        
+    except Exception as e:
+        # Log error without UI overhead
+        elapsed = time.time() - start_time
+        logger.error(f"Search error for {query.business_name} ({elapsed:.2f}s): {str(e)}")
+        # Return empty results to allow processing to continue with other queries
+        return []
 
 
 async def fetch_content(urls: List[str]) -> Dict[str, str]:
