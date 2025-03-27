@@ -245,7 +245,7 @@ async def generate_search_queries(
             )
         ]
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+@retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=5))
 async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
     """Perform search using SerpAPI with retries and error handling."""
     with console.status(f"[bold green]Searching for {query.business_name} ({query.query_type})...", spinner="dots"):
@@ -267,16 +267,32 @@ async def search_with_query(query: BusinessQuery) -> List[SearchResult]:
             logger.debug(f"Using SerpAPI key: {serpapi_key[:4]}...")
             console.print("[green]✓[/green] SerpAPI key found")
             
-            # Create and configure SerpAPI wrapper
-            search = SerpAPIWrapper(serpapi_api_key=serpapi_key)
-            logger.debug("SerpAPI wrapper initialized")
+            try:
+                # Create and configure SerpAPI wrapper with explicit exception handling
+                search = SerpAPIWrapper(serpapi_api_key=serpapi_key)
+                logger.debug("SerpAPI wrapper initialized")
+                
+                # Perform search with detailed timing
+                start_time = time.time()
+                console.print(f"[yellow]Executing search query: '{query.search_query}'[/yellow]")
+                
+                # Catch any specific SerpAPI errors
+                try:
+                    search_result = search.results(query.search_query)
+                    elapsed = time.time() - start_time
+                    logger.info(f"Search completed in {elapsed:.2f} seconds")
+                except Exception as search_error:
+                    logger.error(f"SerpAPI search error: {str(search_error)} - {type(search_error).__name__}")
+                    console.print(f"[bold red]SerpAPI Search Error:[/bold red] {str(search_error)}")
+                    
+                    # For now, we'll return empty results rather than retry
+                    # This helps us avoid waiting for retries when the API key has issues
+                    return []
             
-            # Perform search with detailed timing
-            start_time = time.time()
-            console.print(f"[yellow]Executing search query: '{query.search_query}'[/yellow]")
-            search_result = search.results(query.search_query)
-            elapsed = time.time() - start_time
-            logger.info(f"Search completed in {elapsed:.2f} seconds")
+            except Exception as wrapper_error:
+                logger.error(f"SerpAPI wrapper initialization error: {str(wrapper_error)}")
+                console.print(f"[bold red]SerpAPI Initialization Error:[/bold red] {str(wrapper_error)}")
+                return []
             
             # Process organic results
             results = []
@@ -655,7 +671,8 @@ class BusinessInfoExtractor:
                 search_tasks.append(task)
             
             # Track when all search tasks are done
-            search_done = asyncio.create_task(asyncio.gather(*search_tasks))
+            # Don't wrap asyncio.gather in create_task - it already returns a future
+            search_done = asyncio.gather(*search_tasks)
             
             # Process results as they become available
             all_search_results = []
@@ -667,10 +684,17 @@ class BusinessInfoExtractor:
                 remaining -= 1
                 
                 if success:
-                    query_type = queries[idx].query_type
-                    search_results_list = results  # This is already a list of SearchResult objects
-                    all_search_results.extend(search_results_list)
-                    logger.info(f"Got {len(search_results_list)} results for query type: {query_type}")
+                    # Access the query_type safely
+                    if idx < len(queries):
+                        query_type = queries[idx].query_type
+                        search_results_list = results  # This is already a list of SearchResult objects
+                        all_search_results.extend(search_results_list)
+                        logger.info(f"Got {len(search_results_list)} results for query type: {query_type}")
+                    else:
+                        # Fallback in case of index error
+                        search_results_list = results
+                        all_search_results.extend(search_results_list)
+                        logger.info(f"Got {len(search_results_list)} results for query at unknown index")
                 else:
                     logger.error(f"Search failed for query {idx}: {str(results)}")
             
@@ -745,7 +769,8 @@ class BusinessInfoExtractor:
                 content_tasks.append(task)
             
             # Track when all content fetch tasks are done
-            content_done = asyncio.create_task(asyncio.gather(*content_tasks))
+            # Don't wrap asyncio.gather in create_task - it already returns a future
+            content_done = asyncio.gather(*content_tasks)
             
             # Process results as they become available
             remaining_urls = len(top_urls)
@@ -806,7 +831,8 @@ class BusinessInfoExtractor:
                 preprocess_tasks.append(task)
             
             # Track when all preprocessing tasks are done
-            preprocess_done = asyncio.create_task(asyncio.gather(*preprocess_tasks))
+            # Don't wrap asyncio.gather in create_task - it already returns a future
+            preprocess_done = asyncio.gather(*preprocess_tasks)
             await preprocess_done
             
             # Get all chunks from the queue
@@ -902,31 +928,31 @@ async def _process_businesses_streaming(extractor: "BusinessInfoExtractor", df: 
     total = len(df)
     completed = 0
     
+    # Define the processing function outside the loop to avoid closure issues
+    async def process_and_enqueue(data):
+        try:
+            result = await extractor._process_single_business(data)
+            await queue.put((True, result))
+        except Exception as e:
+            error_msg = f"Error processing {data.get('business_name', 'unknown')}: {str(e)}"
+            logger.error(error_msg)
+            console.print(f"[bold red]Error:[/bold red] {error_msg}")
+            # Create a placeholder result for errors
+            placeholder = BusinessOwnerInfo(
+                business_name=data.get("business_name", "Error"),
+                owner_name=f"Error: {str(e)}",
+                primary_address="Processing failed",
+                state=data.get("state", ""),
+                zip_code=data.get("zip_code", ""),
+                confidence_score=0.0,
+                sources=[]
+            )
+            await queue.put((False, placeholder))
+    
     # Create tasks for all businesses
     tasks = []
     for _, row in df.iterrows():
         business_data = row.to_dict()
-        
-        # Create a task for each business that will put its result in the queue when done
-        async def process_and_enqueue(data):
-            try:
-                result = await extractor._process_single_business(data)
-                await queue.put((True, result))
-            except Exception as e:
-                error_msg = f"Error processing {data.get('business_name', 'unknown')}: {str(e)}"
-                logger.error(error_msg)
-                console.print(f"[bold red]Error:[/bold red] {error_msg}")
-                # Create a placeholder result for errors
-                placeholder = BusinessOwnerInfo(
-                    business_name=data.get("business_name", "Error"),
-                    owner_name=f"Error: {str(e)}",
-                    primary_address="Processing failed",
-                    state=data.get("state", ""),
-                    zip_code=data.get("zip_code", ""),
-                    confidence_score=0.0,
-                    sources=[]
-                )
-                await queue.put((False, placeholder))
         
         # Add the task to our list
         task = asyncio.create_task(process_and_enqueue(business_data))
@@ -937,8 +963,18 @@ async def _process_businesses_streaming(extractor: "BusinessInfoExtractor", df: 
     
     # Start a task to monitor for completion and set the event
     async def monitor_completion():
-        await asyncio.gather(*tasks)
-        done_evt.set()
+        try:
+            # Gather any errors but continue processing all tasks
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Check for any exceptions that weren't already handled
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.error(f"Task {i} failed: {str(result)}")
+        except Exception as e:
+            logger.error(f"Error in monitor_completion: {str(e)}")
+        finally:
+            # Always set the event to prevent hanging
+            done_evt.set()
     
     monitor_task = asyncio.create_task(monitor_completion())
     
@@ -960,16 +996,25 @@ async def _process_businesses_streaming(extractor: "BusinessInfoExtractor", df: 
             
             # If we got a result, yield it
             if get_next in done:
-                success, result = await get_next
-                completed += 1
-                
-                # Rich console logging with detailed status
-                if success:
-                    logger.info(f"Completed {completed}/{total}: {result.business_name}")
-                else:
-                    logger.warning(f"Failed {completed}/{total}: {result.business_name}")
-                
-                yield result
+                try:
+                    queue_result = await get_next
+                    # Unpack the tuple safely
+                    if isinstance(queue_result, tuple) and len(queue_result) == 2:
+                        success, result = queue_result
+                        completed += 1
+                        
+                        # Rich console logging with detailed status
+                        if success:
+                            logger.info(f"Completed {completed}/{total}: {result.business_name}")
+                        else:
+                            logger.warning(f"Failed {completed}/{total}: {result.business_name}")
+                        
+                        yield result
+                    else:
+                        logger.error(f"Unexpected queue result format: {queue_result}")
+                except Exception as e:
+                    logger.error(f"Error processing queue result: {str(e)}")
+                    # Continue the loop to avoid hanging
             
             # If done_evt is set and no more results, we're finished
             if done_evt.is_set() and queue.empty() and completed >= total:

@@ -1,0 +1,89 @@
+state=finished raised LiveError>]
+
+2025-03-27 03:38:00 | ERROR    | 
+business_workflow:_process_single_business - Search 
+failed for query 2: RetryError[<Future at 0x7fb96819c210 
+state=finished raised LiveError>]
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Completed 
+all searches in 2.50s
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Step 3: 
+Fetching content from top URLs for Advanced Medical and 
+Oxygen Eq
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Fetching 
+content from 0 URLs
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Completed 
+all content fetching in 0.00s
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Step 4: 
+Preprocessing content for Advanced Medical and Oxygen Eq
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Created 0 
+content chunks in 0.00s
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Step 5: 
+Extracting business information for Advanced Medical and 
+Oxygen Eq
+
+2025-03-27 03:38:00 | ERROR    | 
+business_workflow:_process_single_business - Search 
+failed for query 0: RetryError[<Future at 0x7fb96819d590 
+state=finished raised LiveError>]
+
+2025-03-27 03:38:00 | ERROR    | 
+business_workflow:_process_single_business - Search 
+failed for query 1: RetryError[<Future at 0x7fb96819ebd0 
+state=finished raised LiveError>]
+
+2025-03-27 03:38:00 | ERROR    | 
+business_workflow:_process_single_business - Search 
+failed for query 2: RetryError[<Future at 0x7fb9683711d0 
+state=finished raised LiveError>]
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Completed 
+all searches in 2.51s
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Step 3: 
+Fetching content from top URLs for Access Commercial 
+Properties
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Fetching 
+content from 0 URLs
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Completed 
+all content fetching in 0.00s
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Step 4: 
+Preprocessing content for Access Commercial Properties
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Created 0 
+content chunks in 0.00s
+
+2025-03-27 03:38:00 | INFO     | 
+business_workflow:_process_single_business - Step 5: 
+Extracting business information for Access Commercial 
+Properties
+
+2025-03-27 03:38:00 | ERROR    | 
+business_workflow:_process_single_business - Search 
+failed for query 0: RetryError[<Future at 0x7fb95051ff10 
+state=finished raised LiveError>]
+
+2025-03-27 03:38:00 | ERROR    | 
+business_workflow:_process_single_busines
