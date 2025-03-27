@@ -1,2 +1,3 @@
+
 #!/bin/bash
-python3.11 simple_app.py
+python3.11 main.py
