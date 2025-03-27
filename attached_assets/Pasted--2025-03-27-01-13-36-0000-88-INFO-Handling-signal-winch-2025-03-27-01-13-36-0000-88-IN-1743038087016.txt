@@ -1,0 +1,60 @@
+[2025-03-27 01:13:36 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:36 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:36 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:36 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:36 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:36 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+[2025-03-27 01:13:37 +0000] [88] [INFO] Handling signal: winch
+INFO:app:Business routes registered successfully
+INFO:app:Initializing agent...
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/langgraph/store/base/embed.py:95: LangChainBetaWarning: The function `init_embeddings` is in beta. It is actively being worked on, so the API may change.
+  return init_embeddings(embed)
+INFO:tools:SerpAPI Search tool added
+INFO:tools:Playwright Web Page Loader tool added
+INFO:tools:Added 2 business extraction tools
+/home/runner/workspace/agent.py:122: LangChainDeprecationWarning: Please see the migration guide at: https://python.langchain.com/docs/versions/migrating_memory/
+  memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+INFO:agent:Agent created successfully with memory management capabilities
+INFO:langmem.reflection:Queue size: 0
+INFO:app:Agent initialized successfully
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+[2025-03-27 01:13:58 +0000] [88] [INFO] Handling signal: winch
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+ERROR:business_processor:Error in extraction process: cannot import name 'MemorySolutionStore' from 'langgraph.store.memory' (/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/langgraph/store/memory/__init__.py)
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
+INFO:langmem.reflection:Queue size: 0
