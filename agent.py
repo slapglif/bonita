@@ -6,8 +6,7 @@ from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
-from langchain.memory import ChatMessageHistory
-from langchain.memory.chat_memory import BaseChatMemory
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.schema import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langgraph.store.memory import InMemoryStore
@@ -123,33 +122,17 @@ Question: {input}
         chat_history = ChatMessageHistory()
         logger.info("Using standard ChatMessageHistory for agent memory")
             
-        # Create custom memory using the history
-        class CustomChatMemory(BaseChatMemory):
-            def __init__(self, chat_history, memory_key="chat_history", return_messages=True):
-                super().__init__(memory_key=memory_key, return_messages=return_messages)
-                self.chat_history = chat_history
-                
-            @property
-            def memory_variables(self) -> List[str]:
-                return [self.memory_key]
-                
-            def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-                return {self.memory_key: self.chat_history.messages}
-                
-            def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-                # Save user message
-                if "input" in inputs:
-                    self.chat_history.add_user_message(inputs["input"])
-                # Save AI message
-                if outputs and isinstance(outputs, dict) and "output" in outputs:
-                    self.chat_history.add_ai_message(outputs["output"])
+        # Create a standard LangChain memory with our chat history
+        from langchain_core.memory import ConversationBufferMemory
+        
+        # Use standard ConversationBufferMemory instead of custom implementation
+        memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            chat_memory=chat_history,
+            return_messages=True
+        )
                     
-            def clear(self) -> None:
-                """Clear memory contents."""
-                self.chat_history.clear()
-                    
-        # Use the custom memory handler
-        memory = CustomChatMemory(chat_history, memory_key="chat_history", return_messages=True)
+        # Memory is already defined above
         
         # Create the React agent with proper formatting for tool messages
         agent = create_react_agent(
