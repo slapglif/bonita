@@ -1,0 +1,550 @@
+Skip to main content
+🦜🔗 LangChain  documentation - Home
+Reference
+Legacy reference
+Search
+Ctrl
++
+K
+Docs
+GitHub
+X / Twitter
+Section Navigation
+
+Base packages
+
+Core
+Langchain
+Text Splitters
+Community
+adapters
+agent_toolkits
+agents
+cache
+callbacks
+chains
+chat_loaders
+chat_message_histories
+chat_models
+cross_encoders
+docstore
+document_compressors
+document_loaders
+AcreomLoader
+AirbyteCDKLoader
+AirbyteGongLoader
+AirbyteHubspotLoader
+AirbyteSalesforceLoader
+AirbyteShopifyLoader
+AirbyteStripeLoader
+AirbyteTypeformLoader
+AirbyteZendeskSupportLoader
+AirbyteJSONLoader
+AirtableLoader
+ApifyDatasetLoader
+ArcGISLoader
+ArxivLoader
+AssemblyAIAudioLoaderById
+AssemblyAIAudioTranscriptLoader
+TranscriptFormat
+AsyncHtmlLoader
+AthenaLoader
+AZLyricsLoader
+AzureAIDataLoader
+AzureBlobStorageContainerLoader
+AzureBlobStorageFileLoader
+BaiduBOSDirectoryLoader
+BaiduBOSFileLoader
+O365BaseLoader
+BibtexLoader
+BiliBiliLoader
+BlackboardLoader
+CloudBlobLoader
+FileSystemBlobLoader
+YoutubeAudioLoader
+BlockchainDocumentLoader
+BlockchainType
+BraveSearchLoader
+BrowserbaseLoader
+BrowserlessLoader
+CassandraLoader
+ChatGPTLoader
+CHMParser
+UnstructuredCHMLoader
+AsyncChromiumLoader
+CollegeConfidentialLoader
+ConcurrentLoader
+ConfluenceLoader
+ContentFormat
+CoNLLULoader
+CouchbaseLoader
+CSVLoader
+UnstructuredCSVLoader
+CubeSemanticLoader
+DatadogLogsLoader
+BaseDataFrameLoader
+DataFrameLoader
+DedocAPIFileLoader
+DedocBaseLoader
+DedocFileLoader
+DiffbotLoader
+DirectoryLoader
+DiscordChatLoader
+AzureAIDocumentIntelligenceLoader
+DocusaurusLoader
+DropboxLoader
+DuckDBLoader
+OutlookMessageLoader
+UnstructuredEmailLoader
+UnstructuredEPubLoader
+EtherscanLoader
+EverNoteLoader
+UnstructuredExcelLoader
+FacebookChatLoader
+FaunaLoader
+FigmaFileLoader
+FireCrawlLoader
+GenericLoader
+GeoDataFrameLoader
+GitLoader
+GitbookLoader
+BaseGitHubLoader
+GitHubIssuesLoader
+GithubFileLoader
+GlueCatalogLoader
+GutenbergLoader
+FileEncoding
+HNLoader
+UnstructuredHTMLLoader
+BSHTMLLoader
+HuggingFaceDatasetLoader
+HuggingFaceModelLoader
+IFixitLoader
+UnstructuredImageLoader
+ImageCaptionLoader
+IMSDbLoader
+IuguLoader
+JoplinLoader
+JSONLoader
+KineticaLoader
+LakeFSClient
+LakeFSLoader
+UnstructuredLakeFSLoader
+LarkSuiteDocLoader
+LarkSuiteWikiLoader
+LLMSherpaFileLoader
+UnstructuredMarkdownLoader
+MastodonTootsLoader
+MaxComputeLoader
+MWDumpLoader
+MergedDataLoader
+MHTMLLoader
+MintbaseDocumentLoader
+ModernTreasuryLoader
+MongodbLoader
+NewsURLLoader
+NotebookLoader
+NotionDirectoryLoader
+NotionDBLoader
+NucliaLoader
+OBSDirectoryLoader
+OBSFileLoader
+ObsidianLoader
+UnstructuredODTLoader
+OneDriveLoader
+OneDriveFileLoader
+OneNoteLoader
+OpenCityDataLoader
+OracleAutonomousDatabaseLoader
+OracleDocLoader
+OracleDocReader
+OracleTextSplitter
+ParseOracleDocMetadata
+UnstructuredOrgModeLoader
+FasterWhisperParser
+OpenAIWhisperParser
+OpenAIWhisperParserLocal
+YandexSTTParser
+AzureAIDocumentIntelligenceParser
+DocAIParsingResults
+MimeTypeBasedParser
+GrobidParser
+ServerUnavailableException
+BS4HTMLParser
+CSegmenter
+CobolSegmenter
+CodeSegmenter
+CPPSegmenter
+CSharpSegmenter
+ElixirSegmenter
+GoSegmenter
+JavaSegmenter
+JavaScriptSegmenter
+KotlinSegmenter
+LanguageParser
+LuaSegmenter
+PerlSegmenter
+PHPSegmenter
+PythonSegmenter
+RubySegmenter
+RustSegmenter
+ScalaSegmenter
+TreeSitterSegmenter
+TypeScriptSegmenter
+MsWordParser
+AmazonTextractPDFParser
+DocumentIntelligenceParser
+PDFMinerParser
+PDFPlumberParser
+PyMuPDFParser
+PyPDFParser
+PyPDFium2Parser
+TextParser
+VsdxParser
+AmazonTextractPDFLoader
+BasePDFLoader
+DedocPDFLoader
+DocumentIntelligenceLoader
+MathpixPDFLoader
+OnlinePDFLoader
+PDFMinerLoader
+PDFMinerPDFasHTMLLoader
+PDFPlumberLoader
+PagedPDFSplitter
+PyMuPDFLoader
+PyPDFDirectoryLoader
+PyPDFLoader
+PyPDFium2Loader
+UnstructuredPDFLoader
+PebbloSafeLoader
+PolarsDataFrameLoader
+UnstructuredPowerPointLoader
+PsychicLoader
+PubMedLoader
+PySparkDataFrameLoader
+PythonLoader
+QuipLoader
+ReadTheDocsLoader
+RecursiveUrlLoader
+RedditPostsLoader
+RoamLoader
+ColumnNotFoundError
+RocksetLoader
+RSpaceLoader
+RSSFeedLoader
+UnstructuredRSTLoader
+UnstructuredRTFLoader
+S3DirectoryLoader
+S3FileLoader
+ScrapflyLoader
+ScrapingAntLoader
+SharePointLoader
+SitemapLoader
+SlackDirectoryLoader
+SnowflakeLoader
+SpiderLoader
+SpreedlyLoader
+SQLDatabaseLoader
+SRTLoader
+StripeLoader
+SurrealDBLoader
+TelegramChatApiLoader
+TelegramChatFileLoader
+TelegramChatLoader
+TencentCOSDirectoryLoader
+TencentCOSFileLoader
+TensorflowDatasetLoader
+TextLoader
+TiDBLoader
+ToMarkdownLoader
+TomlLoader
+TrelloLoader
+UnstructuredTSVLoader
+TwitterTweetLoader
+UnstructuredBaseLoader
+UnstructuredURLLoader
+PlaywrightEvaluator
+PlaywrightURLLoader
+UnstructuredHtmlEvaluator
+SeleniumURLLoader
+VsdxLoader
+WeatherDataLoader
+WebBaseLoader
+WhatsAppChatLoader
+WikipediaLoader
+Docx2txtLoader
+UnstructuredWordDocumentLoader
+UnstructuredXMLLoader
+XorbitsLoader
+GoogleApiClient
+GoogleApiYoutubeLoader
+TranscriptFormat
+YoutubeLoader
+YuqueLoader
+fetch_mime_types
+concatenate_rows
+concatenate_rows
+detect_file_encodings
+concatenate_cells
+remove_newlines
+extract_from_images_with_rapidocr
+get_parser
+default_joiner
+concatenate_rows
+text_to_docs
+get_elements_from_api
+satisfies_min_unstructured_version
+validate_unstructured_version
+concatenate_rows
+AstraDBLoader
+BigQueryLoader
+DocugamiLoader
+GCSDirectoryLoader
+GCSFileLoader
+GoogleSpeechToTextLoader
+GoogleDriveLoader
+DocAIParser
+UnstructuredAPIFileIOLoader
+UnstructuredAPIFileLoader
+UnstructuredFileIOLoader
+UnstructuredFileLoader
+document_transformers
+embeddings
+example_selectors
+graph_vectorstores
+graphs
+indexes
+llms
+memory
+output_parsers
+query_constructors
+retrievers
+storage
+tools
+utilities
+utils
+vectorstores
+Experimental
+Integrations
+
+AI21
+Airbyte
+Anthropic
+AstraDB
+AWS
+Azure Dynamic Sessions
+Box
+Chroma
+Cohere
+Couchbase
+Elasticsearch
+Exa
+Fireworks
+Google Community
+Google GenAI
+Google VertexAI
+Groq
+Huggingface
+Milvus
+MistralAI
+MongoDB
+Nomic
+Nvidia Ai Endpoints
+Ollama
+OpenAI
+Pinecone
+Postgres
+Prompty
+Qdrant
+Robocorp
+Together
+Unstructured
+VoyageAI
+Weaviate
+LangChain Python API Reference
+document_loaders
+PlaywrightURLLoader
+PlaywrightURLLoader
+class langchain_community.document_loaders.url_playwright.PlaywrightURLLoader(urls: List[str], continue_on_failure: bool = True, headless: bool = True, remove_selectors: List[str] | None = None, evaluator: PlaywrightEvaluator | None = None, proxy: Dict[str, str] | None = None)[source]
+Load HTML pages with Playwright and parse with Unstructured.
+
+This is useful for loading pages that require javascript to render.
+
+Parameters
+:
+urls (List[str]) –
+
+continue_on_failure (bool) –
+
+headless (bool) –
+
+remove_selectors (List[str] | None) –
+
+evaluator (PlaywrightEvaluator | None) –
+
+proxy (Dict[str, str] | None) –
+
+urls
+List of URLs to load.
+
+Type
+:
+List[str]
+
+continue_on_failure
+If True, continue loading other URLs on failure.
+
+Type
+:
+bool
+
+headless
+If True, the browser will run in headless mode.
+
+Type
+:
+bool
+
+proxy
+If set, the browser will access URLs through the specified proxy.
+
+Type
+:
+Optional[Dict[str, str]]
+
+Example
+
+from langchain_community.document_loaders import PlaywrightURLLoader
+
+urls = ["https://api.ipify.org/?format=json",]
+proxy={
+    "server": "https://xx.xx.xx:15818", # https://<host>:<port>
+    "username": "username",
+    "password": "password"
+}
+loader = PlaywrightURLLoader(urls, proxy=proxy)
+data = loader.load()
+Load a list of URLs using Playwright.
+
+Methods
+
+__init__(urls[, continue_on_failure, ...])
+
+Load a list of URLs using Playwright.
+
+alazy_load()
+
+Load the specified URLs with Playwright and create Documents asynchronously.
+
+aload()
+
+Load the specified URLs with Playwright and create Documents asynchronously.
+
+lazy_load()
+
+Load the specified URLs using Playwright and create Document instances.
+
+load()
+
+Load data into Document objects.
+
+load_and_split([text_splitter])
+
+Load Documents and split into chunks.
+
+__init__(urls: List[str], continue_on_failure: bool = True, headless: bool = True, remove_selectors: List[str] | None = None, evaluator: PlaywrightEvaluator | None = None, proxy: Dict[str, str] | None = None)[source]
+Load a list of URLs using Playwright.
+
+Parameters
+:
+urls (List[str]) –
+
+continue_on_failure (bool) –
+
+headless (bool) –
+
+remove_selectors (List[str] | None) –
+
+evaluator (PlaywrightEvaluator | None) –
+
+proxy (Dict[str, str] | None) –
+
+async alazy_load() → AsyncIterator[Document][source]
+Load the specified URLs with Playwright and create Documents asynchronously. Use this function when in a jupyter notebook environment.
+
+Returns
+:
+A list of Document instances with loaded content.
+
+Return type
+:
+AsyncIterator[Document]
+
+async aload() → List[Document][source]
+Load the specified URLs with Playwright and create Documents asynchronously. Use this function when in a jupyter notebook environment.
+
+Returns
+:
+A list of Document instances with loaded content.
+
+Return type
+:
+List[Document]
+
+lazy_load() → Iterator[Document][source]
+Load the specified URLs using Playwright and create Document instances.
+
+Returns
+:
+A list of Document instances with loaded content.
+
+Return type
+:
+Iterator[Document]
+
+load() → List[Document]
+Load data into Document objects.
+
+Return type
+:
+List[Document]
+
+load_and_split(text_splitter: TextSplitter | None = None) → List[Document]
+Load Documents and split into chunks. Chunks are returned as Documents.
+
+Do not override this method. It should be considered to be deprecated!
+
+Parameters
+:
+text_splitter (Optional[TextSplitter]) – TextSplitter instance to use for splitting documents. Defaults to RecursiveCharacterTextSplitter.
+
+Returns
+:
+List of Documents.
+
+Return type
+:
+List[Document]
+
+Examples using PlaywrightURLLoader
+
+URL
+
+Document Extraction for Developers Transform docs into structured data with Sensible. Try for free →
+Ads by EthicalAds
+ On this page
+PlaywrightURLLoader
+PlaywrightURLLoader.urls
+PlaywrightURLLoader.continue_on_failure
+PlaywrightURLLoader.headless
+PlaywrightURLLoader.proxy
+PlaywrightURLLoader.__init__()
+PlaywrightURLLoader.alazy_load()
+PlaywrightURLLoader.aload()
+PlaywrightURLLoader.lazy_load()
+PlaywrightURLLoader.load()
+PlaywrightURLLoader.load_and_split()
+© Copyright 2023, LangChain Inc.
+
+Read the Docs
+ latest

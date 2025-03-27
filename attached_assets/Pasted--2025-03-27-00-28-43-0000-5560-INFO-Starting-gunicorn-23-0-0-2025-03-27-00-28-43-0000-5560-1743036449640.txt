@@ -1,0 +1,336 @@
+[2025-03-27 00:28:43 +0000] [5560] [INFO] Starting gunicorn 23.0.0
+[2025-03-27 00:28:43 +0000] [5560] [INFO] Listening at: http://0.0.0.0:5000 (5560)
+[2025-03-27 00:28:43 +0000] [5560] [INFO] Using worker: sync
+[2025-03-27 00:28:43 +0000] [5571] [INFO] Booting worker with pid: 5571
+DEBUG:root:Initializing MemoryManager
+DEBUG:root:AsyncSerpAPITool initialized with max_concurrent=20
+DEBUG:root:AsyncSerpAPITool initialized with max_concurrent=20
+INFO:root:Database tables created
+INFO:root:Loaded 200 business records from Excel
+[2025-03-27 00:37:34 +0000] [5560] [INFO] Handling signal: winch
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+ERROR:root:Error processing business Absolute Insurance Inc.: This session is provisioning a new connection; concurrent operations are not permitted (Background on this error at: https://sqlalche.me/e/20/isce)
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ABSOLUTE HOME IMPROVEMENT L.L' in MO 64040? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Absolute ManagedCare Inc' in CA 90221? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ABSOLUTE WELDING INC' in IN 47106? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Absolute West Corp' in CA 90810? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Absolutely Clean Services Inc' in MI 49548? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Abundant Hills AFH LLC' in WA 98056? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ABUDE DENTAL CORPORATION' in CA 92346? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Abundance Chiropractic LLC' in FL 33781? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Abu Maknojia Enterprises Inc' in TX 77034? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:root:Searching: Who owns the business 'Abundant Properties LLC' in CO 80033? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'AC Optimal Health LLC' in GA 31558? What is their home address?
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'AC Palmer Properties LLC' in OH 43113? What is their home address?
+DEBUG:root:Stored hot memory: b12cde49-cbee-4545-894c-2707c77c3b21:hot_memory:Who owns the business 'ABSOLUTE WELDING INC' in IN 47106? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'AC Automotive' in NC 27127? What is their home address?
+DEBUG:root:Stored hot memory: 8a9362de-be05-4aa5-8dc0-ebda21812c8d:hot_memory:Who owns the business 'Abundant Hills AFH LLC' in WA 98056? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ABYLEX INC' in CA 95828? What is their home address?
+DEBUG:root:Stored hot memory: 96d53a13-f6c4-4bd1-8d43-1807bb974f43:hot_memory:Who owns the business 'Absolute ManagedCare Inc' in CA 90221? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'AC3E ENERGY SERVICES' in AZ 85034? What is their home address?
+DEBUG:root:Stored hot memory: 984f31d5-0146-4ea9-aec9-7d3bdbf530a4:hot_memory:Who owns the business 'Absolute West Corp' in CA 90810? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Academic Landscaping LLC' in NC 28214? What is their home address?
+DEBUG:root:Stored hot memory: 2b2e192d-ba93-4eff-8b1f-e4b59582ffe4:hot_memory:Who owns the business 'ABSOLUTE HOME IMPROVEMENT L.L' in MO 64040? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACADEMIC MEDIC LLC' in DE 19701? What is their home address?
+DEBUG:root:Stored hot memory: 2c7533f1-2c86-4969-b55b-b112bf375645:hot_memory:Who owns the business 'Abu Maknojia Enterprises Inc' in TX 77034? What is their home address?
+DEBUG:root:Stored hot memory: b16d7024-9488-4839-88e5-2b020db8f576:hot_memory:Who owns the business 'AC Palmer Properties LLC' in OH 43113? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Academy of City Ballet of Hous' in TX 77043? What is their home address?
+ERROR:root:Error processing business AC Palmer Properties LLC: Method 'commit()' can't be called here; method 'commit()' is already in progress and this would cause an unexpected state change to <SessionTransactionState.CLOSED: 5> (Background on this error at: https://sqlalche.me/e/20/isce)
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Acai Exotic LLC' in FL 33009? What is their home address?
+DEBUG:root:Stored hot memory: adcbfa86-e45b-4664-813e-cb5d247c9435:hot_memory:Who owns the business 'Abundant Properties LLC' in CO 80033? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: d7a42ae4-335d-4e4d-8fae-838f4d7a17e9:hot_memory:Who owns the business 'Absolutely Clean Services Inc' in MI 49548? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 85c5c5be-f07c-4ba5-a3e0-b3708bc19c32:hot_memory:Who owns the business 'Abundance Chiropractic LLC' in FL 33781? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 017e1ed5-195b-4f1e-9b6e-0daaa024c1eb:hot_memory:Who owns the business 'AC Automotive' in NC 27127? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 7ac1f4e3-e5c5-4a99-863d-d31054716a4e:hot_memory:Who owns the business 'Academy of City Ballet of Hous' in TX 77043? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 26c2d24f-5450-4dac-b371-7c04c4cb1c96:hot_memory:Who owns the business 'AC3E ENERGY SERVICES' in AZ 85034? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 62d55f20-36b6-4b49-83d2-e33ded70c763:hot_memory:Who owns the business 'AC Optimal Health LLC' in GA 31558? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 0034e1aa-e3fc-4d70-9bfd-5df21fa5200a:hot_memory:Who owns the business 'ACADEMIC MEDIC LLC' in DE 19701? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 7b99aced-a9fb-40d3-ad55-840b0e6ee07d:hot_memory:Who owns the business 'Acai Exotic LLC' in FL 33009? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 339e8eb2-eb49-4efd-a310-25893b83e877:hot_memory:Who owns the business 'Academic Landscaping LLC' in NC 28214? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: f1c50507-6777-4ddd-9610-36e50d2eb194:hot_memory:Who owns the business 'ABYLEX INC' in CA 95828? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 869285c6-c003-4ae8-afea-de652c5e4380:hot_memory:Who owns the business 'ABUDE DENTAL CORPORATION' in CA 92346? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACB Infinity Inc' in GA 30314? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Searching: Who owns the business 'ACC FITNESS LLC' in FL 32819? What is their home address?
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACBF's Banana Stand LLC' in IL 60657? What is their home address?
+DEBUG:root:Searching: Who owns the business 'ACC International LLC' in PA 19508? What is their home address?
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Accelerando Inc.' in NC 27410? What is their home address?
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Accelerance Inc.' in NC 28202? What is their home address?
+DEBUG:root:Searching: Who owns the business 'ACBATES' in CO 81403? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Accel Fusion LLC' in TX 79761? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Accelerate ABA Licensed Behavi' in NY 12065? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Access Commercial Properties' in CA 91406? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Access Optics LLC' in OK 74012? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Accelerated Development Group' in MO 64063? What is their home address?
+DEBUG:root:Stored hot memory: aa95feb7-9b96-43f6-8f84-3135ce984441:hot_memory:Who owns the business 'Accelerance Inc.' in NC 28202? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Accounted For LLC' in IN 47274? What is their home address?
+DEBUG:root:Stored hot memory: 486294af-2f49-47d5-8bfa-97c42d4ed8b4:hot_memory:Who owns the business 'ACBF's Banana Stand LLC' in IL 60657? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACCI L.L.C.' in CA 92307? What is their home address?
+DEBUG:root:Stored hot memory: 84792c4e-18e0-4581-90dd-5c32d2abe01a:hot_memory:Who owns the business 'ACC FITNESS LLC' in FL 32819? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Access Mental Health LLC' in KS 66866? What is their home address?
+DEBUG:root:Stored hot memory: 0e6fac8c-feba-4627-9ed2-c771839063b1:hot_memory:Who owns the business 'ACB Infinity Inc' in GA 30314? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Accoutant' in MT 59068? What is their home address?
+DEBUG:root:Stored hot memory: 22f466b9-893c-4a08-8b21-5da7e2c6a109:hot_memory:Who owns the business 'Accel Fusion LLC' in TX 79761? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACCOUNTING CONNECTIONS LLC' in FL 34209? What is their home address?
+DEBUG:root:Stored hot memory: 98533e80-3a77-49f3-8751-3712b86f423a:hot_memory:Who owns the business 'Accounted For LLC' in IN 47274? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACCRETION CAPITAL INC.' in CA 95126? What is their home address?
+DEBUG:root:Stored hot memory: 7e076f05-f01c-45fe-ac10-05935d053d68:hot_memory:Who owns the business 'ACC International LLC' in PA 19508? What is their home address?
+DEBUG:root:Stored hot memory: ea048996-f809-4d54-b2a2-c43c474f5cf5:hot_memory:Who owns the business 'Accelerando Inc.' in NC 27410? What is their home address?
+DEBUG:root:Executing node: react
+ERROR:root:Error processing business Accelerando Inc.: Method 'commit()' can't be called here; method 'commit()' is already in progress and this would cause an unexpected state change to <SessionTransactionState.CLOSED: 5> (Background on this error at: https://sqlalche.me/e/20/isce)
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'AccuCut Lawn Services L.L.C.' in MN 56501? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Accrue Unlimited LLC' in NC 27604? What is their home address?
+DEBUG:root:Stored hot memory: 2c55e9ef-dbe0-4e53-badd-271cdb6aedb3:hot_memory:Who owns the business 'Accelerate ABA Licensed Behavi' in NY 12065? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 938c9607-061c-4bf1-a3e6-39afd9c84988:hot_memory:Who owns the business 'Access Optics LLC' in OK 74012? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: c7ebddab-15ef-4f07-92fb-ed27806cb4d5:hot_memory:Who owns the business 'Access Commercial Properties' in CA 91406? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 33dcfee9-b542-44e5-91e2-7d75363a7877:hot_memory:Who owns the business 'Access Mental Health LLC' in KS 66866? What is their home address?
+DEBUG:root:Stored hot memory: 743886fa-f86b-4d22-83b5-9fbbc88ad44f:hot_memory:Who owns the business 'Accoutant' in MT 59068? What is their home address?
+ERROR:root:Error processing business Accoutant: Method 'commit()' can't be called here; method 'commit()' is already in progress and this would cause an unexpected state change to <SessionTransactionState.CLOSED: 5> (Background on this error at: https://sqlalche.me/e/20/isce)
+DEBUG:root:Stored hot memory: abf5cbc7-ab32-4547-900e-79fc6137afe7:hot_memory:Who owns the business 'AccuCut Lawn Services L.L.C.' in MN 56501? What is their home address?
+ERROR:root:Error processing business AccuCut Lawn Services L.L.C.: Method 'commit()' can't be called here; method 'commit()' is already in progress and this would cause an unexpected state change to <SessionTransactionState.CLOSED: 5> (Background on this error at: https://sqlalche.me/e/20/isce)
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 393688d6-5096-4973-8f96-093b36fd5b01:hot_memory:Who owns the business 'ACCRETION CAPITAL INC.' in CA 95126? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: ef2f93e5-ce3f-49cd-bc3b-a752a584c88a:hot_memory:Who owns the business 'ACCOUNTING CONNECTIONS LLC' in FL 34209? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: ae1ff413-dfb2-4dcd-b158-de77593c3dd6:hot_memory:Who owns the business 'Accrue Unlimited LLC' in NC 27604? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: cf26d7bd-588d-4686-a855-c55788d744f1:hot_memory:Who owns the business 'Accelerated Development Group' in MO 64063? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: 02e57566-5d54-4f5e-bec8-5859fc9337d3:hot_memory:Who owns the business 'ACBATES' in CO 81403? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:root:Stored hot memory: b78c18b0-519b-4f17-8e34-002346cc4027:hot_memory:Who owns the business 'ACCI L.L.C.' in CA 92307? What is their home address?
+DEBUG:root:Executing node: reflect
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+DEBUG:root:Executing node: retrieve
+ERROR:root:Error processing business Accurate Acquisition LLC: This session is provisioning a new connection; concurrent operations are not permitted (Background on this error at: https://sqlalche.me/e/20/isce)
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Executing node: react
+DEBUG:root:Searching: Who owns the business 'accu-labels' in TX 78217? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Accurate Fumigation Inc.' in CA 95624? What is their home address?
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Accurate Machine Products Inco' in WI 53546? What is their home address?
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACE Fire & Safety Services LL' in OK 74047? What is their home address?
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Accurate Renovations' in NJ 7047? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Ace Duct LLC' in NJ 7075? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Ace Handyman Services of Portl' in OR 97209? What is their home address?
+DEBUG:root:Searching: Who owns the business 'ACE Hardware Plano Inc' in TX 75023? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Ace Motel' in PA 19030? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Ace Wrecker Service LLC' in GA 30101? What is their home address?
+DEBUG:root:Searching: Who owns the business 'ACE OF PARMA LLC' in OH 44129? What is their home address?
+DEBUG:root:Searching: Who owns the business 'Ace Haven LLC' in WA 98208? What is their home address?
+DEBUG:root:Stored hot memory: 6f3ff298-7df3-4b98-9712-ab06138203dc:hot_memory:Who owns the business 'Ace Haven LLC' in WA 98208? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Acequia Investment Management' in NM 87114? What is their home address?
+DEBUG:root:Stored hot memory: 12ec74cb-f79e-4677-bf1c-520e224230f7:hot_memory:Who owns the business 'ACE Hardware Plano Inc' in TX 75023? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Acerose LLC' in GA 30076? What is their home address?
+DEBUG:root:Stored hot memory: f70d910f-06b3-4118-8c3d-eaa5404aa8c4:hot_memory:Who owns the business 'Ace Duct LLC' in NJ 7075? What is their home address?
+DEBUG:root:Stored hot memory: 0dce9421-c961-4c5f-aca3-9f4227ffe542:hot_memory:Who owns the business 'ACE Fire & Safety Services LL' in OK 74047? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+ERROR:root:Error processing business ACE Fire & Safety Services LL: Method 'commit()' can't be called here; method 'commit()' is already in progress and this would cause an unexpected state change to <SessionTransactionState.CLOSED: 5> (Background on this error at: https://sqlalche.me/e/20/isce)
+DEBUG:root:Searching: Who owns the business 'Ace Realty LLC' in SC 29582? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Acknowlogy Risk Consultants LL' in UT 84720? What is their home address?
+DEBUG:root:Stored hot memory: 54f03b7b-6b99-44ae-b025-a560973a2230:hot_memory:Who owns the business 'accu-labels' in TX 78217? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACK Home Care LLC' in OH 45459? What is their home address?
+DEBUG:root:Stored hot memory: 4d6ab846-5d1f-42c0-aa41-e350c3a1f4d4:hot_memory:Who owns the business 'Accurate Renovations' in NJ 7047? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'Achamfour LLC' in CO 80247? What is their home address?
+DEBUG:root:Stored hot memory: d98a66b4-c873-4407-a024-e1cadf28ad82:hot_memory:Who owns the business 'Ace Wrecker Service LLC' in GA 30101? What is their home address?
+DEBUG:root:Executing node: react
+DEBUG:asyncio:Using selector: EpollSelector
+DEBUG:root:Searching: Who owns the business 'ACH Enterprise LLC' in TX 77433? What is their home address?
+DEBUG:root:Stored hot memory: da8d2947-00e1-4718-9f6c-58df72087710:hot_memory:Who owns the business 'Accurate Fumigation Inc.' in CA 95624? What is their home address?

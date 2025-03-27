@@ -3,9 +3,15 @@ import logging
 from typing import List
 
 from langchain.tools import BaseTool, Tool
-from langchain_community.tools import SerpAPIWrapper
-from langchain_community.document_loaders import AsyncWebPageLoader
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_community.utilities.serpapi import SerpAPIWrapper
+from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
+
+# Import business extraction tools
+try:
+    from business_processor import get_business_extraction_tools
+    BUSINESS_TOOLS_AVAILABLE = True
+except ImportError:
+    BUSINESS_TOOLS_AVAILABLE = False
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -31,12 +37,19 @@ def get_tools() -> List[BaseTool]:
     except Exception as e:
         logger.error(f"Error setting up SerpAPI tool: {str(e)}")
     
-    # Async Web Page Loader Tool
+    # Web Page Loader Tool using Playwright
     def fetch_webpage(url: str) -> str:
-        """Fetch content from a webpage asynchronously."""
+        """Fetch content from a webpage with full JavaScript rendering support."""
         try:
-            loader = AsyncWebPageLoader(url)
+            # Create a loader for this specific URL
+            loader = PlaywrightURLLoader(
+                urls=[url],
+                continue_on_failure=True,
+                headless=True
+            )
             docs = loader.load()
+            if not docs:
+                return f"No content could be loaded from {url}"
             return "\n\n".join([doc.page_content for doc in docs])
         except Exception as e:
             logger.error(f"Error fetching webpage {url}: {str(e)}")
@@ -44,23 +57,22 @@ def get_tools() -> List[BaseTool]:
     
     web_tool = Tool(
         name="FetchWebPage",
-        description="Fetch and read content from a specific URL. Use this tool when you need to get detailed information from a webpage. Input should be a valid URL.",
+        description="Fetch and read content from a specific URL. Use this tool when you need to get detailed information from a webpage. Input should be a valid URL. This tool can handle JavaScript-rendered content.",
         func=fetch_webpage
     )
     tools.append(web_tool)
-    logger.info("Async Web Page Loader tool added")
+    logger.info("Playwright Web Page Loader tool added")
     
-    # Fallback to Tavily Search if SerpAPI key is not available
+    # Add business extraction tools if available
+    if BUSINESS_TOOLS_AVAILABLE:
+        business_tools = get_business_extraction_tools()
+        tools.extend(business_tools)
+        logger.info(f"Added {len(business_tools)} business extraction tools")
+    else:
+        logger.warning("Business extraction tools not available")
+    
+    # Only using SerpAPI for search functionality
     if not os.environ.get("SERPAPI_API_KEY"):
-        try:
-            tavily_api_key = os.environ.get("TAVILY_API_KEY")
-            if tavily_api_key:
-                tavily_tool = TavilySearchResults(api_key=tavily_api_key)
-                tools.append(tavily_tool)
-                logger.info("Tavily Search tool added as fallback")
-            else:
-                logger.warning("Neither SERPAPI_API_KEY nor TAVILY_API_KEY found, search capabilities limited")
-        except Exception as e:
-            logger.error(f"Error setting up Tavily search tool: {str(e)}")
+        logger.warning("SERPAPI_API_KEY not found, search capabilities will not be available")
     
     return tools

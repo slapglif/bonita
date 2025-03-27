@@ -1,0 +1,675 @@
+Okay, here is an extremely detailed conceptual implementation guide for leveraging LangMem within a LangGraph agent architecture, synthesizing all the provided information into a comprehensive resource for an agent development team. This guide emphasizes exact paths, functions, classes, data flow, architectural patterns, and DTOs.
+
+Comprehensive Conceptual Guide: Implementing LangMem in LangGraph Agents
+
+I. Introduction & Core Goal
+
+This guide details the conceptual implementation of robust long-term and short-term memory capabilities within AI agents built using the LangGraph framework, leveraging the LangMem library. The primary goal is to create agents capable of:
+
+Learning: Extracting and structuring information (facts, preferences, experiences) from conversations.
+
+Adaptation: Modifying behavior and responses based on learned information and optimized prompts.
+
+Context Maintenance: Remembering relevant information across long interactions and multiple sessions, overcoming context window limitations.
+
+Continuous Improvement: Refining core instructions (prompts) based on performance analysis.
+
+We will cover the necessary imports, classes, functions, data structures, architectural patterns, and data flows required to achieve this.
+
+II. Foundational LangMem Concepts Recap
+
+Memory Types:
+
+Semantic: Facts, knowledge (Structured via Pydantic BaseModel like Triple or UserProfile, stored as Collections or Profiles).
+
+Episodic: Specific past interactions, reasoning steps (Structured via BaseModel like Episode).
+
+Procedural: Learned instructions, behaviors (Often managed via prompt optimization).
+
+Storage (BaseStore): The persistence layer. LangMem integrates with LangGraph's storage interface.
+
+langgraph.store.memory.InMemoryStore: Default, suitable for development, non-persistent.
+
+Persistent Stores: Required for production (e.g., cloud-based vector stores compatible with BaseStore). Configuration involves setting up credentials and potentially indexing (index={"dims": ..., "embed": ...}).
+
+Namespaces: Crucial for data isolation (per-user, per-session, per-agent). Defined as tuples of strings, often using dynamic templates.
+
+langmem.utils.NamespaceTemplate (or langmem.NamespaceTemplate): Utility to create dynamic namespaces like ("profiles", "{user_id}") that resolve using RunnableConfig.
+
+III. Architectural Blueprint: LangMem-Powered Agent
+
+A typical LangGraph agent incorporating comprehensive memory will involve:
+
+State Definition: A MessagesState (or subclass) possibly including fields for context (to hold RunningSummary) and potentially retrieved memories.
+
+Storage Configuration: An instance of BaseStore (e.g., InMemoryStore) configured and often made available via @entrypoint or passed explicitly.
+
+Short-Term Memory Handling: A node (like SummarizationNode) to manage context window limits.
+
+Core Agent Logic: Nodes responsible for LLM calls, potentially using retrieved memories or summarized context.
+
+Memory Tools (Hot Path): Tool objects created by create_manage_memory_tool and create_search_memory_tool, added to the agent's toolset.
+
+Background Memory Processing (Background Path): A MemoryStoreManager (created by create_memory_store_manager) potentially wrapped in a ReflectionExecutor and triggered after agent responses.
+
+Prompt Optimization (Offline): A separate process using create_prompt_optimizer or create_multi_prompt_optimizer to refine agent prompts based on collected trajectories.
+
+Checkpointing: Using a MemorySaver (or other checkpointer) to persist graph state across turns.
+
+IV. Phase 1: Setup, Storage, and Namespacing
+
+Installation:
+
+Ensure LangMem is installed: pip install -U langmem
+
+Install necessary LangGraph and LLM provider packages (e.g., langgraph, langchain-openai, langchain-anthropic).
+
+API Key Configuration:
+
+Set environment variables for your chosen LLM provider (e.g., ANTHROPIC_API_KEY, OPENAI_API_KEY).
+
+Storage Initialization:
+
+Import: from langgraph.store.memory import InMemoryStore (or your chosen persistent store class).
+
+Instantiation: Define embedding details for similarity search if using vector indexing.
+
+# Example with InMemoryStore using OpenAI embeddings
+store = InMemoryStore(
+    index={
+        "dims": 1536, # Dimension for text-embedding-3-small
+        "embed": "openai:text-embedding-3-small" # Specify the embedding model
+    }
+)
+# For persistent stores, configuration will vary based on the provider.
+
+
+Dynamic Namespacing Setup:
+
+Import: from langmem.utils import NamespaceTemplate (verify path, might be langmem.NamespaceTemplate)
+
+Definition: Create templates for different memory types, incorporating runtime variables.
+
+# Define templates for isolating data per user
+user_profile_ns = NamespaceTemplate(("profiles", "{user_id}"))
+user_semantic_ns = NamespaceTemplate(("semantic_memories", "{user_id}"))
+user_episodic_ns = NamespaceTemplate(("episodes", "{user_id}"))
+shared_team_ns = NamespaceTemplate(("team_knowledge", "{team_id}"))
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Usage: Pass these NamespaceTemplate objects to memory tools and managers where a namespace argument is required. LangGraph will resolve {user_id}, {team_id} etc., from the RunnableConfig provided during invocation (config={"configurable": {"user_id": "...", "team_id": "..."}}).
+
+V. Phase 2: Populating the Memory Store
+
+This phase details how information gets written to the configured BaseStore.
+
+Hot Path: Agent-Controlled Memory via Tools
+
+Concept: The agent explicitly decides to save, update, delete, or search memory during its reasoning process using provided tools.
+
+Use Case: Immediate saving of explicit user requests ("Remember my preference"), recording critical context during a task.
+
+Imports:
+
+from langmem import create_manage_memory_tool, create_search_memory_tool
+
+from langchain_core.tools import Tool (Type hint)
+
+from langgraph.prebuilt import create_react_agent (Common agent type using tools)
+
+from langgraph.store.memory.base import BaseStore (Type hint for optional store param)
+
+Tool Creation:
+
+# Tool for CRUD operations on memory
+manage_tool: Tool = create_manage_memory_tool(
+    namespace=user_semantic_ns, # Use the NamespaceTemplate
+    instructions="Use this to save important facts, user preferences, or correct existing memories.",
+    schema=str, # Default: store plain strings. Can use Pydantic BaseModel for structured data.
+    actions_permitted=("create", "update", "delete"), # Control allowed actions
+    # store=store # Optional: Only needed if used outside LangGraph context with implicit store
+    name="save_or_update_memory" # Custom tool name
+)
+
+# Tool for searching memory
+search_tool: Tool = create_search_memory_tool(
+    namespace=user_semantic_ns, # Search within the same namespace
+    instructions="Use this to recall relevant past information, facts, or preferences before answering.",
+    # store=store # Optional
+    name="recall_memory" # Custom tool name
+)
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Agent Integration (create_react_agent example):
+
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver # For state persistence
+
+checkpoint_saver = MemorySaver()
+
+agent_executor = create_react_agent(
+    model="anthropic:claude-3-5-sonnet-latest", # Your LLM
+    tools=[manage_tool, search_tool],
+    store=store, # Make store available to the agent and tools implicitly
+    checkpoint=checkpoint_saver # Enable checkpointing
+    # prompt=... # Custom prompt function might use store.search directly too
+)
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Data Flow (Hot Path Tool Call):
+
+User Message -> Agent Executor
+
+LLM decides to call save_or_update_memory (e.g., with content="User prefers blue", action="create").
+
+create_manage_memory_tool's underlying function executes.
+
+It resolves the namespace using RunnableConfig.
+
+It interacts with the store (via get_store() or passed instance) to perform the create/update/delete operation within the resolved namespace.
+
+Returns a confirmation string (e.g., "created memory ...").
+
+Agent Executor continues reasoning or responds to the user.
+
+Background Path: Automatic Extraction via Managers
+
+Concept: Memory extraction happens "subconsciously" after an interaction, driven by an LLM analyzing conversation history against predefined schemas and instructions. Does not add latency to the agent's response.
+
+Use Case: Automatically capturing user profile details, extracting semantic triples from discussions, saving successful problem-solving episodes.
+
+Imports:
+
+from langmem import create_memory_manager, create_memory_store_manager, MemoryStoreManager
+
+from pydantic import BaseModel, Field (For defining schemas)
+
+from langchain_core.language_models import BaseChatModel (Type hint)
+
+from langmem.models import MemoryState, ExtractedMemory (DTOs for stateless manager)
+
+from typing import Sequence, Union, Type (Type hints)
+
+Schema Definition (Pydantic): Define structure for extracted data.
+
+class UserProfile(BaseModel):
+    """Represents user-specific information."""
+    name: str | None = Field(None, description="User's name")
+    timezone: str | None = Field(None, description="User's timezone")
+    preferences: dict[str, str] = Field(default_factory=dict, description="Key-value preferences")
+
+class SemanticTriple(BaseModel):
+    """Stores a subject-predicate-object fact."""
+    subject: str
+    predicate: str
+    object: str
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Manager Creation (create_memory_store_manager - Recommended for LangGraph): Stateful, integrates with BaseStore.
+
+profile_store_manager: MemoryStoreManager = create_memory_store_manager(
+    model="anthropic:claude-3-5-sonnet-latest", # LLM for extraction/analysis
+    schemas=[UserProfile], # List of Pydantic schemas to guide extraction
+    instructions="Analyze the conversation and extract/update the user's profile information based on the UserProfile schema.",
+    namespace=user_profile_ns, # Use NamespaceTemplate for dynamic resolution
+    store=store, # Explicitly pass store or rely on LangGraph context
+    enable_inserts=True, # Allow creating new profiles
+    enable_deletes=True, # Allow updating/overwriting profile fields implicitly
+    query_model="anthropic:claude-3-haiku-latest", # Optional: Faster model for initial memory search query generation
+    query_limit=5 # Max relevant memories to retrieve for context
+)
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Manager Creation (create_memory_manager - Stateless): Use if you need custom storage logic or more control over the state.
+
+# Stateless manager - returns extracted memories, doesn't interact with store directly
+stateless_triple_manager: Runnable[MemoryState, list[ExtractedMemory]] = create_memory_manager(
+    model="anthropic:claude-3-5-sonnet-latest",
+    schemas=[SemanticTriple],
+    instructions="Extract factual relationships as subject-predicate-object triples.",
+    enable_inserts=True,
+    enable_updates=False # Example: Only add new triples, don't modify old ones
+)
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Integration: Typically triggered after the agent generates its response. Often uses ReflectionExecutor.
+
+Data Flow (Background MemoryStoreManager):
+
+Agent generates response_msg.
+
+Main flow triggers ReflectionExecutor.submit({"messages": messages + [response_msg]}, after_seconds=...).
+
+In Background: ReflectionExecutor calls profile_store_manager.invoke.
+
+MemoryStoreManager resolves namespace from RunnableConfig.
+
+(Optional Query) Uses query_model to generate search queries from messages.
+
+Searches the store within the resolved namespace for relevant existing memories (query_limit).
+
+Uses the primary model, instructions, schemas, messages, and retrieved existing_memories to determine updates (inserts, updates, deletes).
+
+Applies these changes to the store within the resolved namespace.
+
+Deferred Background Processing (ReflectionExecutor)
+
+Concept: Delay the execution of background memory processing to avoid redundant work during rapid user interactions (debouncing) or to reduce costs.
+
+Import: from langmem.utils import ReflectionExecutor (Verify path)
+
+Class: ReflectionExecutor(reflector: Runnable | str, store: Optional[BaseStore], ...)
+
+reflector: The runnable to execute (e.g., the MemoryStoreManager instance).
+
+store: Required for local background execution.
+
+Method: submit(input_dict: dict, after_seconds: float = 0)
+
+Integration: Wrap the MemoryStoreManager and use submit instead of direct invoke.
+
+# Assume 'profile_store_manager' and 'store' are defined
+background_executor = ReflectionExecutor(
+    reflector=profile_store_manager,
+    store=store
+)
+
+# Inside your agent's response generation node:
+async def agent_response_node(state: State):
+    # ... generate response_msg ...
+    response_msg = {"role": "assistant", "content": "..."}
+    messages_for_memory = state['messages'] + [response_msg]
+
+    # Schedule reflection, e.g., 30 seconds after the last message
+    background_executor.submit(
+        {"messages": messages_for_memory},
+        after_seconds=30.0
+    )
+    return {"messages": [response_msg]} # Return response to user immediately
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Data Flow: Same as background processing, but the invoke call on the MemoryStoreManager is delayed by after_seconds. If submit is called again for the same context before the delay expires, the previous task is typically cancelled and rescheduled with the updated input.
+
+VI. Phase 3: Using Memory & Managing Context
+
+This phase covers how the agent accesses memory and handles long conversations.
+
+Memory Retrieval:
+
+Hot Path Tool (create_search_memory_tool): Agent explicitly calls the search tool.
+
+Invocation: recall_memory.invoke({"query": "User's preferred color", "limit": 3})
+
+Returns: Serialized memories (and raw objects). Agent incorporates results into its response generation.
+
+Background Manager Context: MemoryStoreManager automatically searches for relevant memories (store.search) using the query_model or message embeddings before its analysis phase. These retrieved memories provide context to the primary model deciding on updates.
+
+Direct Store Search: Agent logic (e.g., in a custom prompt function or node) can directly use store.search() or store.asearch() before calling the LLM.
+
+from langgraph.config import get_store, get_config
+
+def agent_prompt_with_memory(state: State):
+    config = get_config()
+    user_id = config["configurable"].get("user_id", "default_user")
+    store = get_store()
+    query = state['messages'][-1]['content'] # Use last message as query
+
+    # Define namespace to search (must match where data was stored)
+    search_namespace = ("profiles", user_id)
+
+    try:
+         # Search the store directly
+        retrieved_memories = store.search(search_namespace, query=query, limit=3)
+        memory_context = "\n".join([f"- {item.value}" for item in retrieved_memories])
+    except Exception: # Handle cases where namespace might not exist yet
+        memory_context = "No relevant memories found."
+
+    system_message = f"""You are a helpful assistant. Use the following retrieved memories to inform your response:
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+<Relevant Memories>
+{memory_context}
+</Relevant Memories>
+"""
+return [{"role": "system", "content": system_message}] + state['messages']
+```
+
+
+Short-Term Memory Summarization
+
+Concept: Prevent exceeding LLM context limits by summarizing older parts of the conversation history.
+
+Use Case: Very long chat sessions.
+
+Imports:
+
+from langmem.short_term import SummarizationNode, summarize_messages, RunningSummary, SummarizationResult
+
+from langgraph.graph import StateGraph, START, MessagesState
+
+from typing import Any, TypedDict (For state definition)
+
+State Modification: The graph state needs a context field to store the RunningSummary.
+
+class AgentState(MessagesState):
+    # context field to hold arbitrary data, including RunningSummary
+    context: dict[str, Any]
+    # Add a key for the summarizer's output if using SummarizationNode directly
+    summarized_messages: list[AnyMessage] | None = None
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Component: SummarizationNode
+
+Configuration:
+
+from langchain_openai import ChatOpenAI
+
+summarization_llm = ChatOpenAI(model="gpt-4o").bind(max_tokens=256) # Bind max_tokens for summary generation
+
+summarizer_node = SummarizationNode(
+    model=summarization_llm,
+    max_tokens=4096, # Trigger summarization when total tokens (approx) exceed this
+    input_messages_key="messages", # Read from main message list
+    output_messages_key="summarized_messages", # Write summarized list here
+    # Prompts (initial_summary_prompt etc.) can be customized
+)
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Integration: Place this node before the main LLM call node in the StateGraph. The LLM node should read from output_messages_key (summarized_messages in this example).
+
+Component: summarize_messages function
+
+Usage: Call directly within a custom graph node. Requires manual state management for RunningSummary.
+
+from langmem.short_term import summarize_messages, RunningSummary
+
+async def custom_summarization_node(state: AgentState):
+    current_messages = state['messages']
+    # Get previous summary state, if any
+    previous_summary = state.get('context', {}).get('running_summary')
+
+    summarization_result: SummarizationResult = summarize_messages(
+        messages=current_messages,
+        running_summary=previous_summary,
+        model=summarization_llm, # Defined earlier
+        max_tokens=4096 # Trigger threshold
+    )
+
+    # Prepare state update
+    update = {"summarized_messages_for_llm": summarization_result.messages}
+    if summarization_result.running_summary:
+        # Update context with the new RunningSummary object
+        update["context"] = {"running_summary": summarization_result.running_summary}
+
+    return update
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Data Flow (Using SummarizationNode):
+
+Turn starts, messages added to state['messages'].
+
+Graph routes to summarizer_node.
+
+SummarizationNode reads state['messages'] and state['context']['running_summary'] (if exists).
+
+Calculates token count. If max_tokens exceeded:
+a. Identifies messages to summarize (excluding already summarized ones via running_summary.summarized_message_ids).
+b. Calls summarization_llm using appropriate prompt (initial_summary_prompt or existing_summary_prompt) with messages to summarize and previous summary text.
+c. Creates a new summary message.
+d. Constructs the output list: [system_msg (if any), new_summary_msg] + remaining_unsmarized_messages.
+e. Creates/updates RunningSummary object with new summary text and all summarized message IDs.
+
+SummarizationNode returns a state update: { "summarized_messages": <output_list>, "context": {"running_summary": <updated_RunningSummary>} }.
+
+Graph routes to the LLM node.
+
+LLM node reads state['summarized_messages'] as its input context.
+
+LLM generates response, which is added back to state['messages'] for the next turn.
+
+VII. Phase 4: Continuous Improvement via Prompt Optimization
+
+Concept: Use conversation logs (trajectories) and feedback to automatically generate improved system prompts for agents. Performed offline.
+
+Use Case: Fixing recurring agent errors, improving response structure, enhancing helpfulness based on real-world performance.
+
+Imports:
+
+from langmem import create_prompt_optimizer, create_multi_prompt_optimizer
+
+from langmem.prompts.types import Prompt, OptimizerInput, MultiPromptOptimizerInput, AnnotatedTrajectory (Verify exact path for DTOs)
+
+Data Structures:
+
+AnnotatedTrajectory: NamedTuple(messages: list[dict], feedback: Any | None) - Represents one conversation turn or full conversation with optional feedback (scores, comments, edits).
+
+Prompt: TypedDict(name: str, prompt: str, update_instructions: str | None, when_to_update: str | None) - Structured representation of a prompt, including metadata for optimization.
+
+OptimizerInput: TypedDict(trajectories: list[AnnotatedTrajectory], prompt: Prompt) - Input for single prompt optimization.
+
+MultiPromptOptimizerInput: TypedDict(trajectories: list[AnnotatedTrajectory], prompts: list[Prompt]) - Input for optimizing multiple prompts together.
+
+Optimizer Creation:
+
+# Single prompt optimizer (Gradient strategy is most thorough)
+single_optimizer = create_prompt_optimizer(
+    model="anthropic:claude-3-5-sonnet-latest",
+    kind="gradient", # Options: "gradient", "metaprompt", "prompt_memory"
+    # config=GradientOptimizerConfig(...) # Optional: Fine-tune strategy params
+)
+
+# Multi-prompt optimizer for systems with interacting prompts
+multi_optimizer = create_multi_prompt_optimizer(
+    model="anthropic:claude-3-5-sonnet-latest",
+    kind="gradient"
+)
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Process:
+
+Collect Data: Log agent conversations (messages) and gather feedback (feedback). Structure these as AnnotatedTrajectory objects.
+
+Define Prompts: Represent the agent's current system prompt(s) using the Prompt TypedDict, including name and prompt. Add update_instructions and when_to_update for multi-prompt optimization guidance.
+
+Prepare Input: Create OptimizerInput or MultiPromptOptimizerInput.
+
+Run Optimization (Offline):
+
+# Example single prompt optimization
+input_data = OptimizerInput(trajectories=[...], prompt=Prompt(name="agent_v1", prompt="Current prompt..."))
+optimized_prompt_str: str = await single_optimizer.ainvoke(input_data)
+
+# Example multi-prompt optimization
+multi_input_data = MultiPromptOptimizerInput(trajectories=[...], prompts=[Prompt(...), Prompt(...)])
+optimized_prompts_list: list[Prompt] = await multi_optimizer.ainvoke(multi_input_data)
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+Deploy Update: Replace the agent's system prompt(s) with the optimized_prompt_str or prompts from optimized_prompts_list.
+
+Optimization Strategies (kind):
+
+prompt_memory: Fastest (1 LLM call), simple pattern matching from history.
+
+metaprompt: Moderate (1-5 LLM calls/step), uses meta-learning.
+
+gradient: Slowest (2-10 LLM calls/step), most thorough via reflection (critique + update proposal).
+
+VIII. Phase 5: Integrated Agent Structure (Conceptual StateGraph)
+
+from typing import Any, TypedDict
+from langgraph.graph import StateGraph, START, END, MessagesState
+from langgraph.checkpoint.memory import MemorySaver
+from langmem.short_term import SummarizationNode, RunningSummary
+from langmem import create_memory_store_manager, ReflectionExecutor, NamespaceTemplate
+from langchain_openai import ChatOpenAI
+from langgraph.store.memory import InMemoryStore
+# ... other imports (BaseModel for schemas etc.)
+
+# --- 1. State Definition ---
+class AgentState(MessagesState):
+    context: dict[str, Any] # For RunningSummary and potentially other context
+    summarized_messages: list[AnyMessage] | None = None # Output of summarizer
+
+# --- 2. Storage & LLM Setup ---
+store = InMemoryStore(index={"dims": 1536, "embed": "openai:text-embedding-3-small"})
+llm = ChatOpenAI(model="gpt-4o")
+summarization_llm = llm.bind(max_tokens=256)
+memory_extraction_llm = "anthropic:claude-3-5-sonnet-latest" # Or use llm
+
+# --- 3. Namespace & Schema Setup ---
+user_memory_ns = NamespaceTemplate(("user_data", "{user_id}"))
+# Define Pydantic Schemas (e.g., UserProfile) here...
+# class UserProfile(BaseModel): ...
+
+# --- 4. Component Initialization ---
+summarizer = SummarizationNode(
+    model=summarization_llm, max_tokens=4096, output_messages_key="summarized_messages"
+)
+
+memory_manager = create_memory_store_manager(
+    model=memory_extraction_llm, schemas=[UserProfile], namespace=user_memory_ns # Add your schemas
+)
+
+background_reflector = ReflectionExecutor(reflector=memory_manager, store=store)
+
+checkpointer = MemorySaver()
+
+# --- 5. Graph Nodes ---
+def get_input_messages(state: AgentState):
+    # Logic to decide if using summarized or full messages based on state
+    return state.get("summarized_messages") or state['messages']
+
+async def agent_llm_call(state: AgentState):
+    input_msgs = get_input_messages(state)
+    # Add direct memory retrieval here if needed (store.search based on user_id from config)
+    response = await llm.ainvoke(input_msgs)
+    # Schedule background reflection
+    background_reflector.submit(
+        {"messages": state['messages'] + [response]}, # Process original messages + response
+        after_seconds=5 # Example delay
+    )
+    return {"messages": [response]} # Add response to original messages list
+
+# --- 6. Graph Definition ---
+workflow = StateGraph(AgentState)
+
+workflow.add_node("summarize", summarizer)
+workflow.add_node("agent_llm", agent_llm_call)
+
+workflow.add_edge(START, "summarize")
+workflow.add_edge("summarize", "agent_llm")
+# Loop back? Depending on desired flow. Need logic to handle END or continue.
+# Example: Add a condition or just end after LLM call for simplicity here.
+workflow.add_edge("agent_llm", END) # Simplified end
+
+# --- 7. Compile Graph ---
+graph = workflow.compile(checkpointer=checkpointer)
+
+# --- 8. Invocation ---
+async def run_agent():
+    config = {"configurable": {"thread_id": "thread-1", "user_id": "user-xyz"}}
+    async for event in graph.astream_events(
+        {"messages": [{"role": "user", "content": "Hi, remember I prefer concise answers."}]},
+        config=config,
+        version="v2"
+    ):
+        print(event)
+        if event['event'] == 'on_chat_model_stream':
+            # Handle streaming output
+            pass
+
+# asyncio.run(run_agent())
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Python
+IGNORE_WHEN_COPYING_END
+
+IX. Key Considerations & Best Practices
+
+Namespacing is Non-Negotiable: Always use NamespaceTemplate or carefully constructed tuples to isolate data, especially in multi-user scenarios. Base it on reliable identifiers (user_id, session_id, team_id).
+
+Schema Design: Thoughtfully design Pydantic BaseModel schemas for structured memory extraction. This guides the LLM effectively.
+
+Storage Choice: InMemoryStore is for development only. Select a scalable, persistent BaseStore implementation for production, considering cost, performance, and query capabilities (vector search).
+
+Background Processing: Use ReflectionExecutor for MemoryStoreManager to avoid adding latency to user interactions. Tune the after_seconds delay appropriately (0 for immediate background, >0 for debouncing).
+
+Summarization Thresholds: Tune max_tokens in SummarizationNode or summarize_messages based on your target LLM's context window and typical conversation length.
+
+Prompt Optimization Cadence: Run prompt optimization periodically (e.g., daily, weekly) on collected production data (trajectories + feedback), not in real-time.
+
+Error Handling: Implement try-except blocks around store interactions (store.search) or memory manager calls if needed, especially when namespaces might not exist yet.
+
+Cost Management: Be mindful of LLM calls. Background extraction, summarization, and especially gradient-based prompt optimization incur costs. Use faster/cheaper models where appropriate (e.g., query_model in MemoryStoreManager).
+
+Tool Instructions: Write clear, concise instructions for both create_manage_memory_tool and create_search_memory_tool to guide the agent on when and how to use them effectively.
+
+X. Conclusion
+
+By systematically implementing these components and adhering to the architectural patterns outlined, development teams can build sophisticated LangGraph agents using LangMem. These agents will possess robust short-term and long-term memory, enabling them to maintain context, learn from interactions, personalize responses, adapt over time through prompt optimization, and ultimately provide a more intelligent and coherent user experience. Careful consideration of namespacing, storage, background processing, and schema design is paramount for building scalable and reliable memory-enabled agents.
