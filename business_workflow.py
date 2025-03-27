@@ -389,9 +389,7 @@ async def fetch_content(urls: List[str]) -> Dict[str, str]:
         loader = PlaywrightURLLoader(
             urls=urls,
             remove_selectors=["nav", "header", "footer", ".ads", "#ads", ".navigation", ".menu"],
-            headless=True,
-            wait_until="domcontentloaded",
-            timeout=30000    # 30 seconds timeout
+            headless=True
         )
         
         # Load documents (this is already efficient and runs in parallel)
@@ -733,9 +731,7 @@ class BusinessInfoExtractor:
                     loader = PlaywrightURLLoader(
                         urls=[url],
                         remove_selectors=["nav", "header", "footer", ".ads", "#ads", ".navigation", ".menu"],
-                        headless=True,
-                        wait_until="domcontentloaded",
-                        timeout=30000
+                        headless=True
                     )
                     
                     # Load document

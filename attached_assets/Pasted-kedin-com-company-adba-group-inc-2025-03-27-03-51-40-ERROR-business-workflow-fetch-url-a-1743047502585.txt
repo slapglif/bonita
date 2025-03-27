@@ -1,0 +1,77 @@
+kedin.com/company/adba-group-inc
+
+2025-03-27 03:51:40 | ERROR    | 
+business_workflow:fetch_url_and_enqueue - General error 
+processing 
+https://www.linkedin.com/company/adba-group-inc: 
+PlaywrightURLLoader.__init__() got an unexpected keyword 
+argument 'wait_until'
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:fetch_url_and_enqueue - Fetching 
+content from URL 5: 
+https://www.linkedin.com/in/garrett-clayton-a85272175
+
+2025-03-27 03:51:40 | ERROR    | 
+business_workflow:fetch_url_and_enqueue - General error 
+processing 
+https://www.linkedin.com/in/garrett-clayton-a85272175: 
+PlaywrightURLLoader.__init__() got an unexpected keyword 
+argument 'wait_until'
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:fetch_url_and_enqueue - Fetching 
+content from URL 6: 
+https://www.dnb.com/contact-directory/contact-profile.osm
+an_salih_kadi.6ceadd21b0433d0a6412642f0a6fdf14.html
+
+2025-03-27 03:51:40 | ERROR    | 
+business_workflow:fetch_url_and_enqueue - General error 
+processing 
+https://www.dnb.com/contact-directory/contact-profile.osm
+an_salih_kadi.6ceadd21b0433d0a6412642f0a6fdf14.html: 
+PlaywrightURLLoader.__init__() got an unexpected keyword 
+argument 'wait_until'
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 9 
+results for query type: address
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 9 
+results for query type: address
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 10 
+results for query type: owner
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 10 
+results for query type: owner
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 10 
+results for query type: contact
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 8 
+results for query type: owner
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 10 
+results for query type: owner
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Got 10 
+results for query type: address
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Completed 
+all searches in 4.69s
+
+2025-03-27 03:51:40 | INFO     | 
+business_workflow:_process_single_business - Step 3: 
+Fetching content from top URLs for Advanced Rail Systems 
+LLC
+
+2025-03-27 03:51:40 | INFO     | 
