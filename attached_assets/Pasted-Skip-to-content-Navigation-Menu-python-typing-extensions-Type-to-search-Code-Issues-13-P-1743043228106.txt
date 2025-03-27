@@ -1,0 +1,157 @@
+Skip to content
+Navigation Menu
+python
+typing_extensions
+
+Type / to search
+Code
+Issues
+13
+Pull requests
+6
+Actions
+Projects
+Security
+Insights
+Python 3.13.0b1: test_typing_extensions: AttributeError: attribute '__default__' of 'typing.TypeVar' objects is not writable #377
+Closed
+#382
+Closed
+Python 3.13.0b1: test_typing_extensions: AttributeError: attribute '__default__' of 'typing.TypeVar' objects is not writable
+#377
+#382
+@befeleme
+Description
+befeleme
+opened on May 10, 2024
+When building typing_extensions in Fedora with Python 3.13.0b1, test_typing_extensions fails with the traceback below.
+I looked at the recent commits but they don't seem to tackle that. It hasn't yet been seen in the project's CI, probably because it still runs on alpha 6.
+
+/usr/bin/python3 -m unittest discover
+E
+======================================================================
+ERROR: test_typing_extensions (unittest.loader._FailedTest.test_typing_extensions)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_typing_extensions
+Traceback (most recent call last):
+  File "/usr/lib64/python3.13/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/usr/lib64/python3.13/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/builddir/build/BUILD/typing_extensions-4.11.0/src/test_typing_extensions.py", line 1148, in <module>
+    T_a = TypeVar('T_a')
+  File "/builddir/build/BUILD/typing_extensions-4.11.0/src/typing_extensions.py", line 1406, in __new__
+    _set_default(typevar, default)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/builddir/build/BUILD/typing_extensions-4.11.0/src/typing_extensions.py", line 1363, in _set_default
+    type_param.__default__ = None
+    ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: attribute '__default__' of 'typing.TypeVar' objects is not writable
+Activity
+AlexWaygood
+self-assigned thison May 10, 2024
+AlexWaygood
+mentioned this on May 10, 2024
+Fix most tests on Python 3.13 #378
+AlexWaygood
+removed their assignmenton May 10, 2024
+AlexWaygood
+AlexWaygood commented on May 10, 2024
+AlexWaygood
+on May 10, 2024
+Member
+#378 fixed all but one test failure. The last remaining one is to do with AsyncContextManager having an optional second parameter on Python 3.13, but not in the backported version that typing_extensions provides.
+
+JelleZijlstra
+JelleZijlstra commented on May 10, 2024
+JelleZijlstra
+on May 10, 2024
+Member
+@AlexWaygood the changes you made didn't look related to the test failure @befeleme pointed out here. Do you know what's going on here?
+
+Also, there's another failure incoming due to changes I made for beta 2:
+
+% ~/py/cpython/python.exe test_typing_extensions.py 
+Traceback (most recent call last):
+  File "/Users/jelle/py/typing_extensions/src/test_typing_extensions.py", line 42, in <module>
+    from _typed_dict_test_helper import Foo, FooGeneric, VeryAnnotated
+  File "/Users/jelle/py/typing_extensions/src/_typed_dict_test_helper.py", line 17, in <module>
+    class FooGeneric(TypedDict, Generic[T]):
+                                ~~~~~~~^^^
+  File "/Users/jelle/py/cpython/Lib/typing.py", line 431, in inner
+    return func(*args, **kwds)
+  File "/Users/jelle/py/cpython/Lib/typing.py", line 1243, in _generic_class_getitem
+    return _GenericAlias(cls, args)
+  File "/Users/jelle/py/cpython/Lib/typing.py", line 1420, in __init__
+    self.__parameters__ = _collect_parameters(
+                          ~~~~~~~~~~~~~~~~~~~^
+        args,
+        ^^^^^
+        enforce_default_ordering=enforce_default_ordering,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+TypeError: _collect_parameters() got an unexpected keyword argument 'enforce_default_ordering'
+Will work on a fix for that one.
+
+AlexWaygood
+AlexWaygood commented on May 10, 2024
+AlexWaygood
+on May 10, 2024 · edited by AlexWaygood
+Member
+@AlexWaygood the changes you made didn't look related to the test failure @befeleme pointed out here. Do you know what's going on here?
+
+The test failure @befeleme pointed out was more than a test failure: the test module was failing at import time. The failure was because the __default__ attribute on typing.TypeVar is read-only on py313+: in our implementation of PEP-696, we were creating instances of typing.TypeVar, then trying to monkeypatch __default__ attributes onto the TypeVar instances after creating them. But it's unnecessary to monkeypatch attributes onto instances of TypeVar on Python 3.13+, because the "real" TypeVar implementation has a default parameter for its constructor on Python 3.13+. So I fixed the error in #378 by simply not independently reimplementing TypeVar at all on Python 3.13+; instead, we now just from typing import TypeVar on Python 3.13+.
+
+AlexWaygood
+mentioned this in 2 pull requests on May 11, 2024
+Rename typing._collect_parameters python/cpython#118900
+Backport parameter defaults for (Async)Generator and (Async)ContextManager #382
+JelleZijlstra
+closed this as completedin #382on May 11, 2024
+SigureMo
+mentioned this on May 12, 2024
+👷 ci: add Python 3.13 to ci yutto-dev/yutto#267
+AlexWaygood
+mentioned this on May 20, 2024
+PEP-696: AttributeError: attribute '__default__' of 'typing.ParamSpec' objects is not writable on Python 3.13 #404
+slapglif
+Add a comment
+new Comment
+Markdown input: edit mode selected.
+Write
+Preview
+Use Markdown to format your comment
+Remember, contributions to this repository should follow its contributing guidelines, security policy and code of conduct.
+Metadata
+Assignees
+No one assigned
+Labels
+No labels
+Projects
+No projects
+Milestone
+No milestone
+Relationships
+None yet
+Development
+NotificationsCustomize
+You're not receiving notifications from this thread.
+Participants
+@JelleZijlstra
+@befeleme
+@AlexWaygood
+Issue actions
+Footer
+© 2025 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Docs
+Contact
+Manage cookies
+Do not share my personal information
+Python 3.13.0b1: test_typing_extensions: `AttributeError: attribute '__default__' of 'typing.TypeVar' objects is not writable` · Issue #377 · python/typing_extensions
