@@ -304,22 +304,62 @@ async def fetch_content(urls: List[str]) -> Dict[str, str]:
     batch_size = 3
     url_batches = [urls[i:i+batch_size] for i in range(0, len(urls), batch_size)]
     
+    try:
+        # Import here to catch ImportError early
+        from playwright.async_api import async_playwright
+    except ImportError:
+        logger.error("Playwright not found. Cannot fetch content.")
+        # Return empty content for all URLs
+        return {url: f"Failed to load content for {url}" for url in urls}
+    
     for batch in url_batches:
         try:
-            # Process each batch
-            loader = PlaywrightURLLoader(
-                urls=batch,
-                continue_on_failure=True,
-                remove_selectors=["nav", "header", "footer", ".ads", "#ads", ".navigation", ".menu"],
-                headless=True
-            )
-            documents = loader.load()
-            
-            # Map URLs to content
-            for doc in documents:
-                source = doc.metadata.get("source", "")
-                if source in batch:
-                    content_map[source] = doc.page_content
+            try:
+                # Process each batch using PlaywrightURLLoader
+                loader = PlaywrightURLLoader(
+                    urls=batch,
+                    continue_on_failure=True,
+                    remove_selectors=["nav", "header", "footer", ".ads", "#ads", ".navigation", ".menu"],
+                    headless=True
+                )
+                documents = loader.load()
+                
+                # Map URLs to content
+                for doc in documents:
+                    source = doc.metadata.get("source", "")
+                    if source in batch:
+                        content_map[source] = doc.page_content
+                
+            except ImportError as import_err:
+                if "unstructured" in str(import_err):
+                    logger.warning("Using fallback content extraction method due to missing unstructured package")
+                    
+                    # Fallback: Extract content directly with playwright
+                    async with async_playwright() as p:
+                        browser = await p.chromium.launch(headless=True)
+                        context = await browser.new_context()
+                        
+                        for url in batch:
+                            try:
+                                page = await context.new_page()
+                                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                                
+                                # Simple text extraction
+                                content = await page.evaluate("""() => {
+                                    // Extract main text content
+                                    return document.body.innerText;
+                                }""")
+                                
+                                content_map[url] = content
+                                await page.close()
+                            except Exception as page_error:
+                                logger.error(f"Error fetching page {url}: {str(page_error)}")
+                                content_map[url] = ""
+                        
+                        await browser.close()
+                else:
+                    # Re-raise if it's not the unstructured import error
+                    raise
             
             # Check for missing URLs in this batch
             for url in batch:
@@ -532,7 +572,7 @@ class BusinessInfoExtractor:
         memory = ProcessingMemory(
             business_name=business_name,
             state=state,
-            zip_code=zip_code
+            zip_code=str(zip_code)  # Convert to string to ensure proper typing
         )
         
         try:
@@ -594,7 +634,7 @@ class BusinessInfoExtractor:
                 owner_name=f"Error: {str(e)}",
                 primary_address="Processing failed",
                 state=state,
-                zip_code=zip_code,
+                zip_code=str(zip_code),
                 confidence_score=0.0,
                 sources=[]
             )
@@ -648,6 +688,9 @@ async def run_extraction_workflow(excel_path: str, output_path: str = "business_
         if missing_columns:
             logger.error(f"Missing required columns in Excel file: {missing_columns}")
             raise ValueError(f"Excel file missing required columns: {missing_columns}")
+        
+        # Convert zip_code column to string to prevent type errors
+        df["zip_code"] = df["zip_code"].astype(str)
         
         # Initialize extractor
         extractor = BusinessInfoExtractor()
