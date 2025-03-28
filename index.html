@@ -1,33 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Minimal Business Extraction App</title>
+    <title>Business Information Extraction System</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
         .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         h1 { color: #333; }
         .alert { padding: 10px; background-color: #f8d7da; color: #721c24; border-radius: 5px; margin-bottom: 15px; }
         .note { padding: 10px; background-color: #d4edda; color: #155724; border-radius: 5px; margin-bottom: 15px; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: monospace; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Business Information Extraction System</h1>
         <div class="note">
-            <p><strong>Status:</strong> Application is running in minimal mode</p>
+            <p><strong>Status:</strong> Running in basic interface mode</p>
         </div>
-        <p>This is a minimal version of the Business Information Extraction System.</p>
-        <p>The full version requires the following packages to be installed:</p>
+        <p>The Business Information Extraction System is a powerful tool designed to extract business owner information using advanced techniques:</p>
+        
+        <h2>Core Features:</h2>
         <ul>
-            <li>Flask</li>
-            <li>Pandas</li>
-            <li>LangChain</li>
-            <li>LangGraph</li>
-            <li>OpenAI</li>
-            <li>Playwright</li>
-            <li>SerpAPI</li>
+            <li><strong>High Performance Processing:</strong> Extracts business information with maximum parallelism</li>
+            <li><strong>Multi-Query Generation:</strong> Creates diverse search strategies for each business</li>
+            <li><strong>Dynamic Search Expansion:</strong> Leverages React agent's observations to decide when to expand searches</li>
+            <li><strong>Comprehensive Analysis:</strong> Provides detailed confidence scores and reasoning paths</li>
+            <li><strong>Web Content Crawling:</strong> Accesses and processes web content from search results</li>
         </ul>
-        <p>Once these packages are installed, the full version will be available.</p>
+        
+        <h2>Usage Instructions:</h2>
+        <p>1. Prepare an Excel file with business data (name, state, zip code)</p>
+        <p>2. Use the business extraction tool to process the data</p>
+        <p>3. Review confidence scores and extracted information</p>
+        <p>4. Download the processed results as a CSV file</p>
+        
+        <div class="alert">
+            <p><strong>Note:</strong> This system requires API keys for SerpAPI and OpenAI to function properly.</p>
+        </div>
+        
+        <h2>Sample Extraction Process:</h2>
+        <pre><code>
+# Sample business data
+- Business Name: Acme Industries LLC
+- State: FL
+- Zip: 33412
+
+# Generated search queries (samples)
+- "who owns Acme Industries LLC in Florida 33412 owner name"
+- "Acme Industries LLC Florida 33412 business registration owner"
+- "Acme Industries LLC Florida secretary of state business filing"
+- "Acme Industries LLC primary address Florida 33412"
+
+# Extraction result
+- Owner: John Smith (confidence: 0.92)
+- Address: 123 Business Way, Palm Beach, FL 33412 (confidence: 0.87)
+- Sources: [Florida Secretary of State, LinkedIn, BBB Profile]
+- Analysis: Multiple sources confirmed John Smith as owner with consistent 
+  information across official records and business profiles.
+        </code></pre>
     </div>
 </body>
 </html>

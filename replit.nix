@@ -1,5 +1,6 @@
 { pkgs }: {
     deps = [
+      pkgs.netcat-openbsd
       pkgs.netcat
       pkgs.python311Packages.pytesseract
       pkgs.python312Packages.pytesseract
